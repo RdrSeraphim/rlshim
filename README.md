@@ -1,5 +1,10 @@
 ![rlshim](rlshim_text.gif)
 
+[![ci status](https://img.shields.io/github/actions/workflow/status/RdrSeraphim/rlshim/ci.yml?style=flat-square)](https://github.com/RdrSeraphim/rlshim/actions/workflows/ci.yml)
+[![latest release](https://img.shields.io/github/v/release/RdrSeraphim/rlshim?sort=semver&display_name=release&style=flat-square)](https://github.com/RdrSeraphim/rlshim/releases/latest)
+
+
+
 A lightweight, native shim for launching RuneLite on Linux with Jagex Accounts.
 
 > Note: This is *relatively* stable software. It should Just Work™ but I cannot account for every use-case in my own testing. [Lemme know if it breaks.](https://github.com/RdrSeraphim/rlshim/issues)
