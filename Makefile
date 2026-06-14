@@ -1,0 +1,49 @@
+.PHONY: all release debug clean install uninstall deb rpm tar debug-deb debug-rpm debug-tar package debug-package
+
+all: release
+
+release: clean
+	@echo "Building Release version..."
+	cmake -B build -DCMAKE_BUILD_TYPE=Release
+	cmake --build build -j$$(nproc)
+
+debug: clean
+	@echo "Building Debug version..."
+	cmake -B build -DCMAKE_BUILD_TYPE=Debug
+	cmake --build build -j$$(nproc)
+
+clean:
+	rm -rf build
+
+install:
+	cmake --install build
+
+uninstall:
+	sudo cmake --build build --target uninstall
+
+deb: release
+	@echo "Building DEB package..."
+	cd build && cpack -G DEB
+
+rpm: release
+	@echo "Building RPM package..."
+	cd build && cpack -G RPM
+
+tar: release
+	@echo "Building tar.gz archive..."
+	cd build && cpack -G TGZ
+	
+debug-deb: debug
+	@echo "Building DEB package..."
+	cd build && cpack -G DEB
+
+debug-rpm: debug
+	@echo "Building RPM package..."
+	cd build && cpack -G RPM
+
+debug-tar: debug
+	@echo "Building tar.gz archive..."
+	cd build && cpack -G TGZ
+
+package: deb rpm tar
+debug-package: debug-deb debug-rpm debug-tar
