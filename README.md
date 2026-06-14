@@ -14,7 +14,7 @@ You might wish to view `rlshim` like a very simplified [Bolt](https://codeberg.o
 When `rlshim` is installed, a desktop entry for RuneLite gets made. Running it runs `rlshim`, handling credentials and ensures RuneLite is available and Java exists to run it, then runs it. That's it.
 
 <span id="fn-1">
-<small>[1] Combining <code>du -h rlshim</code> (in Release build) and <code>du -h ./data</code>, comparing to <code>du -h ~/.local/share/flatpak/app/com.adamcake.Bolt/current/active/files/opt/bolt-launcher/</code>, and that's not accounting for Flatpak-specific extras.
+<small>[1] Combining <code>du -h rlshim</code> (in Release build) and <code>du -h ./data</code>, comparing to <code>du -h ~/.local/share/flatpak/app/com.adamcake.Bolt/current/active/files/opt/bolt-launcher/</code>, and that's not accounting for Flatpak-specific extras.</small>
 </span>
 
 ## Installation
