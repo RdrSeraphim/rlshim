@@ -39,7 +39,7 @@ jobs:
         if: matrix.libc == 'glibc'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang build-essential cmake pkg-config libsecret-1-dev libssl-dev libglfw3-dev libgl1-mesa-dev rpm
+          sudo apt-get install -y clang build-essential cmake pkg-config libsecret-1-dev libssl-dev libglfw3-dev libgl1-mesa-dev rpm libcurl4-openssl-dev
 
       - name: Build Packages (glibc)
         if: matrix.libc == 'glibc'
@@ -53,7 +53,7 @@ jobs:
           # Use Docker to spin up an Alpine container natively on the host architecture
           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest /bin/sh -c "\
             apk update && \
-            apk add clang make cmake pkgconf libsecret-dev openssl-dev glfw-dev mesa-dev g++ && \
+            apk add clang make cmake pkgconf libsecret-dev openssl-dev glfw-dev mesa-dev g++ curl-dev && \
             CXX=clang++ CC=clang make tar"
 
       # ----- PUBLISH -----
