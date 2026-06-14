@@ -171,10 +171,6 @@ configure_file(
     "${CMAKE_CURRENT_BINARY_DIR}/aur/rlshim-git/PKGBUILD"
     @ONLY)
 
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/fedora/rlshim.spec.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/fedora/rlshim.spec"
-    @ONLY)
 
 set(CPACK_PACKAGE_NAME "rlshim")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")

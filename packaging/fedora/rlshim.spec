@@ -1,5 +1,5 @@
 Name:           rlshim
-Version:        @PROJECT_VERSION@
+Version:        1.0.0
 Release:        1%{?dist}
 Summary:        A lightweight, native Linux launcher for RuneLite.
 
