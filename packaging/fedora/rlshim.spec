@@ -15,6 +15,13 @@ BuildRequires:  libsecret-devel
 BuildRequires:  openssl-devel
 BuildRequires:  glfw-devel
 BuildRequires:  mesa-libGL-devel
+BuildRequires:  libcurl-devel
+BuildRequires:  libX11-devel
+BuildRequires:  libXcursor-devel
+BuildRequires:  libXi-devel
+BuildRequires:  libXinerama-devel
+BuildRequires:  libXrandr-devel
+BuildRequires:  git
 
 Requires:       libsecret
 Requires:       openssl
