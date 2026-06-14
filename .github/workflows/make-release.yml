@@ -57,6 +57,19 @@ jobs:
             CXX=clang++ CC=clang make tar"
 
       # ----- UPLOAD -----
+      - name: Zip AUR PKGBUILDs
+        if: matrix.libc == 'glibc' && matrix.arch == 'x86_64'
+        run: |
+          cd build/aur && zip -r ../../aur_pkgbuilds.zip .
+
+      - name: Upload AUR Artifact
+        if: matrix.libc == 'glibc' && matrix.arch == 'x86_64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: aur_pkgbuilds
+          path: aur_pkgbuilds.zip
+          retention-days: 1
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -79,7 +92,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          pattern: rlshim-release-*
           merge-multiple: true
 
       - name: Publish GitHub Release
@@ -91,3 +103,4 @@ jobs:
             artifacts/*.deb
             artifacts/*.rpm
             artifacts/*.tar.gz
+            artifacts/aur_pkgbuilds.zip
