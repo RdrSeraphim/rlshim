@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+    tags-ignore:
+      - "v*" # Don't run on release tags, since make-release handles those
+  pull_request:
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}-${{ matrix.libc }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            libc: glibc
+            os: ubuntu-latest
+          - arch: aarch64
+            libc: glibc
+            os: ubuntu-24.04-arm
+          - arch: x86_64
+            libc: musl
+            os: ubuntu-latest
+          - arch: aarch64
+            libc: musl
+            os: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (glibc)
+        if: matrix.libc == 'glibc'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang build-essential cmake pkg-config libsecret-1-dev libssl-dev libglfw3-dev libgl1-mesa-dev rpm
+
+      - name: Build Debug Packages (glibc)
+        if: matrix.libc == 'glibc'
+        run: |
+          CXX=clang++ CC=clang make debug-package
+
+      - name: Build Debug Packages (musl)
+        if: matrix.libc == 'musl'
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest /bin/sh -c "\
+            apk update && \
+            apk add clang make cmake pkgconf libsecret-dev openssl-dev glfw-dev mesa-dev g++ && \
+            CXX=clang++ CC=clang make debug-tar"
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rlshim-debug-${{ matrix.arch }}-${{ matrix.libc }}
+          path: |
+            build/*.deb
+            build/*.rpm
+            build/*.tar.gz
+          retention-days: 7

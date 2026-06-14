@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Terminal=false
+Name=RuneLite
+GenericName=RuneLite
+Comment=Old School RuneScape Launcher
+Keywords=games;
+Exec=rlshim
+Icon=rlshim
+Categories=Game;
+StartupWMClass=RuneLite

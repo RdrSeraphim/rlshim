@@ -1,0 +1,68 @@
+name: Make Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build ${{ matrix.arch }}-${{ matrix.libc }}
+    runs-on: ${{ matrix.os }}
+    
+    permissions:
+      contents: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            libc: glibc
+            os: ubuntu-latest
+          - arch: aarch64
+            libc: glibc
+            os: ubuntu-24.04-arm
+          - arch: x86_64
+            libc: musl
+            os: ubuntu-latest
+          - arch: aarch64
+            libc: musl
+            os: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ----- GLIBC BUILDS (Native Ubuntu) -----
+      - name: Install dependencies (glibc)
+        if: matrix.libc == 'glibc'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang build-essential cmake pkg-config libsecret-1-dev libssl-dev libglfw3-dev libgl1-mesa-dev rpm
+
+      - name: Build Packages (glibc)
+        if: matrix.libc == 'glibc'
+        run: |
+          CXX=clang++ CC=clang make package
+
+      # ----- MUSL BUILDS (Docker Alpine) -----
+      - name: Build Packages (musl)
+        if: matrix.libc == 'musl'
+        run: |
+          # Use Docker to spin up an Alpine container natively on the host architecture
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest /bin/sh -c "\
+            apk update && \
+            apk add clang make cmake pkgconf libsecret-dev openssl-dev glfw-dev mesa-dev g++ && \
+            CXX=clang++ CC=clang make tar"
+
+      # ----- PUBLISH -----
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          fail_on_unmatched_files: false
+          files: |
+            build/*.deb
+            build/*.rpm
+            build/*.tar.gz
