@@ -38,7 +38,7 @@ jobs:
         if: matrix.libc == 'glibc'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang build-essential cmake pkg-config libsecret-1-dev libssl-dev libglfw3-dev libgl1-mesa-dev rpm libcurl4-openssl-dev
+          sudo apt-get install -y clang build-essential cmake pkg-config libsecret-1-dev libssl-dev libglfw3-dev libgl1-mesa-dev rpm libcurl4-openssl-dev libx11-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
 
       - name: Build Debug Packages (glibc)
         if: matrix.libc == 'glibc'
@@ -50,7 +50,7 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest /bin/sh -c "\
             apk update && \
-            apk add clang make cmake pkgconf libsecret-dev openssl-dev glfw-dev mesa-dev g++ curl-dev && \
+            apk add clang make cmake pkgconf libsecret-dev openssl-dev glfw-dev mesa-dev g++ curl-dev git libx11-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev && \
             CXX=clang++ CC=clang make debug-tar"
 
       - name: Upload Build Artifacts

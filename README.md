@@ -79,17 +79,17 @@ You will need a modern C++ compiler (supporting C++23), CMake, and a few develop
 
 **Debian / Ubuntu:**
 ```bash
-sudo apt install clang build-essential cmake pkg-config libsecret-1-dev libssl-dev libglfw3-dev libgl1-mesa-dev
+sudo apt install clang build-essential cmake pkg-config libsecret-1-dev libssl-dev libglfw3-dev libgl1-mesa-dev libcurl4-openssl-dev libx11-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
 ```
 
 **Fedora / RHEL:**
 ```bash
-sudo dnf install clang @development-toolscmake pkgconf libsecret-devel openssl-devel glfw-devel mesa-libGL-devel
+sudo dnf install clang @development-tools cmake pkgconf libsecret-devel openssl-devel glfw-devel mesa-libGL-devel libcurl-devel libX11-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel git
 ```
 
 **Arch Linux:**
 ```bash
-sudo pacman -S clang base-devel cmake pkgconf libsecret openssl glfw-wayland # (or glfw-x11)
+sudo pacman -S clang base-devel cmake pkgconf libsecret openssl curl libx11 libxcursor libxi libxinerama libxrandr git glfw-wayland # (or glfw-x11)
 ```
 
 ### 2. Compile
