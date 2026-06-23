@@ -3,13 +3,13 @@ name: Make Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   release:
     name: Build ${{ matrix.arch }}-${{ matrix.libc }}
     runs-on: ${{ matrix.os }}
-    
+
     permissions:
       contents: write
 
@@ -33,6 +33,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v4
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: -vv --latest --strip header
+        env:
+          OUTPUT: CHANGES.md
+          GITHUB_REPO: ${{ github.repository }}
 
       # ----- GLIBC BUILDS (Native Ubuntu) -----
       - name: Install dependencies (glibc)
@@ -97,7 +107,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          generate_release_notes: false
+          body: ${{ steps.git-cliff.outputs.content }}
           fail_on_unmatched_files: false
           files: |
             artifacts/*.deb
