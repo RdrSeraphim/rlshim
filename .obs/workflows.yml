@@ -1,0 +1,10 @@
+release_build:
+  steps:
+    - trigger_services:
+        project: home:RdrSeraphim:rlshim
+        package: rlshim
+  filters:
+    event: push
+    tags:
+      only:
+        - "v*"

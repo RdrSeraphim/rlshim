@@ -80,7 +80,9 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glfw)
 
-cmake_policy(SET CMP0169 OLD)
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+endif()
 FetchContent_Declare(imgui GIT_REPOSITORY https://github.com/ocornut/imgui.git
                            GIT_TAG v1.92.8)
 FetchContent_Populate(imgui)

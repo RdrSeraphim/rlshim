@@ -2,6 +2,7 @@
 
 [![ci status](https://img.shields.io/github/actions/workflow/status/RdrSeraphim/rlshim/ci.yml?style=flat-square)](https://github.com/RdrSeraphim/rlshim/actions/workflows/ci.yml)
 [![latest release](https://img.shields.io/github/v/release/RdrSeraphim/rlshim?sort=semver&display_name=release&style=flat-square)](https://github.com/RdrSeraphim/rlshim/releases/latest)
+[![obs build result](https://img.shields.io/obs/home%3ARdrSeraphim%3Arlshim/rlshim/openSUSE_Tumbleweed/x86_64?style=flat-square&logo=OpenSUSE&label=obs)](https://build.opensuse.org/package/show/home:RdrSeraphim:rlshim/rlshim)
 
 
 

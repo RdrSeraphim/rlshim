@@ -1,0 +1,56 @@
+<services>
+  <!-- Fetch source from GitHub using the latest tag -->
+  <service name="obs_scm">
+    <param name="url">https://github.com/RdrSeraphim/rlshim.git</param>
+    <param name="scm">git</param>
+    <param name="revision">@PARENT_TAG@</param>
+    <param name="versionformat">@PARENT_TAG@</param>
+    <param name="versionrewrite-pattern">v(.*)</param>
+    <param name="versionrewrite-replacement">\1</param>
+  </service>
+
+  <service name="download_url">
+    <param name="host">github.com</param>
+    <param name="protocol">https</param>
+    <param name="path">/lexiforest/curl-impersonate/releases/download/v1.5.6/libcurl-impersonate-v1.5.6.x86_64-linux-gnu.tar.gz</param>
+  </service>
+
+  <service name="download_url">
+    <param name="host">github.com</param>
+    <param name="protocol">https</param>
+    <param name="path">/lexiforest/curl-impersonate/releases/download/v1.5.6/libcurl-impersonate-v1.5.6.aarch64-linux-gnu.tar.gz</param>
+  </service>
+
+  <service name="download_url">
+    <param name="host">github.com</param>
+    <param name="protocol">https</param>
+    <param name="path">/nlohmann/json/archive/refs/tags/v3.12.0.tar.gz</param>
+    <param name="filename">json-3.12.0.tar.gz</param>
+  </service>
+
+  <service name="download_url">
+    <param name="host">github.com</param>
+    <param name="protocol">https</param>
+    <param name="path">/glfw/glfw/archive/refs/tags/3.3.8.tar.gz</param>
+    <param name="filename">glfw-3.3.8.tar.gz</param>
+  </service>
+
+  <service name="download_url">
+    <param name="host">github.com</param>
+    <param name="protocol">https</param>
+    <param name="path">/ocornut/imgui/archive/refs/tags/v1.92.8.tar.gz</param>
+    <param name="filename">imgui-1.92.8.tar.gz</param>
+  </service>
+
+  <!-- Create tarball from the obs_scm checkout -->
+  <service name="tar" mode="buildtime"/>
+
+  <!-- Recompress to .tar.gz -->
+  <service name="recompress" mode="buildtime">
+    <param name="file">*.tar</param>
+    <param name="compression">gz</param>
+  </service>
+
+  <!-- Update the Version: field in the spec file automatically -->
+  <service name="set_version" mode="buildtime"/>
+</services>
