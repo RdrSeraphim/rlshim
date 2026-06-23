@@ -9,10 +9,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### 🐛 Bug Fixes
 
 - Set a placeholder in the menu when a nameless character exists ([099a2e4](https://github.com/RdrSeraphim/rlshim/-/commit/099a2e4c5fdb0c763f7947b4162171c9335ac604))
+- Set empty char name placeholder for CLI ([8994a28](https://github.com/RdrSeraphim/rlshim/-/commit/8994a281932a312285b74294088704817e92c0b4))
 
 ### 📚 Documentation
 
 - Add badges because they're fun ([e56084b](https://github.com/RdrSeraphim/rlshim/-/commit/e56084b6cf9575e2078cc1d0245a5b1077208b25))
+- Add FUNDING.yml ([3d9ebb3](https://github.com/RdrSeraphim/rlshim/-/commit/3d9ebb35de0739158ca8caaf50f643b62e3ddddd))
 
 ## [1.0.0](https://github.com/RdrSeraphim/rlshim/compare/..v1.0.0) - 2026-06-14
 
