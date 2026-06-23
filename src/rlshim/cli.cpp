@@ -30,7 +30,12 @@ namespace cli {
         while (true) {
             std::cout << "\n================ choose your character ================\n\n";
             for (size_t i = 0; i < accounts.size(); ++i) {
-                std::cout << "[" << (i + 1) << "] " << accounts[i].displayName << "\n";
+                std::string displayName = accounts[i].displayName;
+                if (displayName.empty()) {
+                    displayName = "<no name set>";
+                }
+
+                std::cout << "[" << (i + 1) << "] " << displayName << "\n";
             }
             std::cout << "\nchoose a character (1-" << accounts.size() << "): ";
 
