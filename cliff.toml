@@ -23,6 +23,9 @@ body = """
 {% else %}\
     ## [Unreleased]
 {% endif %}\
+{% if version is containing("1.0.0") %}
+    Initial release.
+{% else %}\
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | striptags | trim | upper_first }}
     {% for commit in commits %}
