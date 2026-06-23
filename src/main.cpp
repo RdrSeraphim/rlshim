@@ -12,7 +12,7 @@
 using json = nlohmann::json;
 
 #ifndef RLSHIM_VERSION
-#define RLSHIM_VERSION "1.0.0"
+#define RLSHIM_VERSION "1.0.1"
 #endif
 
 int main(int argc, char* argv[]) {
@@ -94,7 +94,8 @@ int main(int argc, char* argv[]) {
     if (session.accounts.size() == 1) {
         selected_account = session.accounts[0];
     } else {
-        auto acc_opt = use_gui ? gui::prompt_for_character(session.accounts) : cli::prompt_for_character(session.accounts);
+        auto acc_opt =
+            use_gui ? gui::prompt_for_character(session.accounts) : cli::prompt_for_character(session.accounts);
         if (!acc_opt) {
             logger::error("character selection aborted or failed");
             return 1;
@@ -125,12 +126,12 @@ int main(int argc, char* argv[]) {
 
         logger::info("everything appears to be in order, starting runelite now...");
         std::string jar_flag_str = "-jar";
-        
+
         std::vector<char*> exec_args;
         exec_args.push_back(const_cast<char*>(java.c_str()));
         exec_args.push_back(const_cast<char*>(jar_flag_str.c_str()));
         exec_args.push_back(const_cast<char*>(jar_path.c_str()));
-        
+
         for (char* arg : rl_args) {
             exec_args.push_back(arg);
         }
