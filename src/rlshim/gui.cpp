@@ -35,8 +35,7 @@ static std::string resolve_asset_path(const std::string& asset_name) {
     std::vector<std::filesystem::path> global_paths = {
         std::filesystem::path("/usr/share/rlshim/data") / asset_name,
         std::filesystem::path("/usr/local/share/rlshim/data") / asset_name,
-        std::filesystem::path("/opt/rlshim/data") / asset_name
-    };
+        std::filesystem::path("/opt/rlshim/data") / asset_name};
 
     for (const auto& path : global_paths) {
         if (std::filesystem::exists(path))
@@ -341,8 +340,13 @@ namespace gui {
                 ImGui::GetIO().Fonts->AddFontFromFileTTF(resolve_asset_path("runescape_quill.ttf").c_str());
             ImGui::PushFont(quill_font, 64.0f);
             draw_centered_text("rlshim");
-            ImGui::PopStyleColor();
             ImGui::PopFont();
+            ImGui::Dummy(ImVec2(0.0f, ImGui::GetTextLineHeight()));
+
+            ImGui::PushFont(NULL, 32.0f);
+            draw_centered_text("choose a character");
+            ImGui::PopFont();
+            ImGui::PopStyleColor();
             ImGui::Dummy(ImVec2(0.0f, ImGui::GetTextLineHeight() * 2.0f));
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
@@ -355,7 +359,13 @@ namespace gui {
                 float windowWidth = ImGui::GetContentRegionAvail().x;
                 float buttonWidth = 300.0f;
                 ImGui::SetCursorPosX((windowWidth - buttonWidth) * 0.5f);
-                if (ImGui::Button(acc.displayName.c_str(), ImVec2(buttonWidth, 40))) {
+
+                std::string displayName = acc.displayName;
+                if (displayName.empty()) {
+                    displayName = "[no name set]";
+                }
+
+                if (ImGui::Button(displayName.c_str(), ImVec2(buttonWidth, 40))) {
                     result = acc;
                     submitted = true;
                 }
