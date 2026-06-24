@@ -5,6 +5,6 @@ release_build:
         package: rlshim
   filters:
     event: push
-    tags:
+    branches:
       only:
         - "v*"
