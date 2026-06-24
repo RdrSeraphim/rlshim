@@ -25,7 +25,7 @@ When `rlshim` is installed, a desktop entry for RuneLite gets made. Running it r
 
 ## Installation
 
-Where possible, rlshim supports x86_64 and aarch64 on glibc and/or musl based environments. For glibc-based environments (most of you), read below to find instructions for your distro. For musl-based environments, you'll need to use the [binary `.tar.gz` releases](https://github.com/RdrSeraphim/rlshim/releases/latest) -- I assume you know what you're doing.
+Where possible, `rlshim` supports x86_64 and aarch64 on glibc and/or musl based environments. For glibc-based environments (most of you), read below to find instructions for your distro. For musl-based environments, you'll need to use the [binary `.tar.gz` releases](https://github.com/RdrSeraphim/rlshim/releases/latest) -- I assume you know what you're doing.
 
 ⚠️ **WARNING: `rlshim` does not have Java as a dependency in any of its packages, since it's a RuneLite dependency (properly speaking). Make sure you have Java 11+ installed and `java` is available on your `$PATH`.**
 
