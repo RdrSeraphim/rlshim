@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0](https://github.com/RdrSeraphim/rlshim/compare/v1.0.1..v1.1.0) - 2026-06-24
+
+### 🚀 Features
+
+- Finalize flatpak build ([e9295a9](https://github.com/RdrSeraphim/rlshim/-/commit/e9295a9abb10ecfa9fde0a2fe9fe8ab31baf57de))
+
+### 🐛 Bug Fixes
+
+- Add flatpak paths to assets ([87c8dc1](https://github.com/RdrSeraphim/rlshim/-/commit/87c8dc19c9a7ada6744578c1874a366001239d40))
+
+### 🚜 Refactor
+
+- Define STBI_ONLY_PNG so we only compile what we need ([39fdb29](https://github.com/RdrSeraphim/rlshim/-/commit/39fdb2947c23c8a2ef5121b7557e980f6b6d9784))
+
+### 📚 Documentation
+
+- Clarify flags ([4965e57](https://github.com/RdrSeraphim/rlshim/-/commit/4965e57eed0735c80cf800912e4e099308176ab4))
+- Consistency ([ff13aa0](https://github.com/RdrSeraphim/rlshim/-/commit/ff13aa02084c4b49c7b7bfe35e13badd97359e9a))
+
 ## [1.0.1](https://github.com/RdrSeraphim/rlshim/compare/v1.0.0..v1.0.1) - 2026-06-23
 
 ### 🐛 Bug Fixes
