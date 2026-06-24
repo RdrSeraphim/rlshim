@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0](https://github.com/RdrSeraphim/rlshim/compare/v1.0.1..v1.1.0) - 2026-06-24
+## [1.1.1](https://github.com/RdrSeraphim/rlshim/compare/v1.0.1..v1.1.1) - 2026-06-24
 
 ### 🚀 Features
 
@@ -13,6 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### 🐛 Bug Fixes
 
 - Add flatpak paths to assets ([87c8dc1](https://github.com/RdrSeraphim/rlshim/-/commit/87c8dc19c9a7ada6744578c1874a366001239d40))
+- Bump version to 1.1.1 so github stops complaining ([46568bd](https://github.com/RdrSeraphim/rlshim/-/commit/46568bd9d1a8cc7ef79a34f89549780b54d63696))
 
 ### 🚜 Refactor
 
