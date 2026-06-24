@@ -4,6 +4,9 @@ runtime-version: "25.08"
 sdk: org.freedesktop.Sdk
 command: rlshim
 
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.openjdk25
+
 finish-args:
   # Network access for Jagex account authentication and RuneLite downloads
   - --share=network
@@ -16,8 +19,15 @@ finish-args:
   - --talk-name=org.freedesktop.secrets
   # RuneLite stores its data in ~/.runelite
   - --filesystem=~/.runelite
+  - --env=PATH=/app/jre/bin:/app/bin:/usr/bin
+  - --env=JAVA_HOME=/app/jre
 
 modules:
+  - name: openjdk
+    buildsystem: simple
+    build-commands:
+      - /usr/lib/sdk/openjdk25/install.sh
+
   - name: rlshim
     buildsystem: simple
     build-commands:
