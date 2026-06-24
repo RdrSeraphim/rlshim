@@ -31,17 +31,34 @@ Where possible, rlshim supports x86_64 and aarch64 on glibc and/or musl based en
 
 If your distro isn't here and you're willing to provide a mechanism to make packages for it, feel free to make a pull request.
 
-### Nix / NixOS (Flakes)
-Add the repo to your flake.nix inputs:
-```nix
-rlshim = { url = "github:RdrSeraphim/rlshim"; inputs.nixpkgs.follows = "nixpkgs"; };
+### Flatpak (Any Distro)
+Pre-built `.flatpak` bundles are available on the [Releases](https://github.com/RdrSeraphim/rlshim/releases) page. Download the appropriate architecture for your system and install it:
+```bash
+flatpak install ./life.srp.rlshim-*.flatpak
 ```
 
-Then add it to a package list somewhere:
-```nix
-environment.systemPackages = [
-  inputs.rlshim.packages.${system}.default
-];
+### deb-based distros (Debian, Ubuntu, Mint, etc.)
+Check the [Releases](https://github.com/RdrSeraphim/rlshim/releases) page for pre-compiled `.deb` packages. Download the latest version and install it via:
+```bash
+sudo apt install ./rlshim-*.deb
+```
+
+### Arch Linux (AUR)
+Well, once the [supply chain attack](https://archlinux.org/news/active-aur-malicious-packages-incident/) stops and I can register an account. In the meantime, you can fetch the PKGBUILDs (zipped as `aur_pkgbuilds.zip`) from the [Releases page](https://github.com/RdrSeraphim/rlshim/releases) and build it yourself with `makepkg -si`.
+
+For the stable binary release:  
+```bash
+yay -S rlshim-bin
+```
+
+For the stable source release:
+```bash
+yay -S rlshim
+```
+
+For the "nightly" source release:  
+```bash
+yay -S rlshim-git
 ```
 
 ### Fedora (rpm-based)
@@ -61,34 +78,23 @@ opi rlshim
 ```
 
 If you prefer using repos, you can install it with:
+
 ```bash
 sudo zypper ar https://download.opensuse.org/repositories/home:/RdrSeraphim:/rlshim/$(lsb_release -d | sed 's/.* //')/home:RdrSeraphim:rlshim.repo
 sudo zypper in rlshim
 ```
 
-
-### Arch Linux (AUR)
-<small>well, once the [supply chain attack](https://archlinux.org/news/active-aur-malicious-packages-incident/) stops and i can register</small>
-
-For the stable binary release:  
-```bash
-yay -S rlshim-bin
+### Nix / NixOS (Flakes)
+Add the repo to your flake.nix inputs:
+```nix
+rlshim = { url = "github:RdrSeraphim/rlshim"; inputs.nixpkgs.follows = "nixpkgs"; };
 ```
 
-For the stable source release:
-```bash
-yay -S rlshim
-```
-
-For the "nightly" source release:  
-```bash
-yay -S rlshim-git
-```
-
-### deb-based distros (Debian, Ubuntu, Mint, etc.)
-Check the [Releases](https://github.com/RdrSeraphim/rlshim/releases) page for pre-compiled `.deb` packages. Download the latest version and install it via:
-```bash
-sudo apt install ./rlshim-*.deb
+Then add it to a package list somewhere:
+```nix
+environment.systemPackages = [
+  inputs.rlshim.packages.${system}.default
+];
 ```
 
 ## Building

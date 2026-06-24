@@ -81,9 +81,40 @@ jobs:
             build/*.tar.gz
           retention-days: 1
 
+  flatpak:
+    name: Build Flatpak ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            os: ubuntu-latest
+          - arch: aarch64
+            os: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: life.srp.rlshim-${{ matrix.arch }}.flatpak
+          manifest-path: packaging/flatpak/life.srp.rlshim.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+          arch: ${{ matrix.arch }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rlshim-flatpak-release-${{ matrix.arch }}
+          path: life.srp.rlshim-${{ matrix.arch }}.flatpak
+          retention-days: 1
   publish:
     name: Publish Release
-    needs: release
+    needs: [release, flatpak]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -129,4 +160,6 @@ jobs:
             artifacts/*.deb
             artifacts/*.rpm
             artifacts/*.tar.gz
+            artifacts/*.flatpak
             artifacts/aur_pkgbuilds.zip
+

@@ -1,0 +1,86 @@
+id: life.srp.rlshim
+runtime: org.freedesktop.Platform
+runtime-version: "25.08"
+sdk: org.freedesktop.Sdk
+command: rlshim
+
+finish-args:
+  # Network access for Jagex account authentication and RuneLite downloads
+  - --share=network
+  # X11 + Wayland display access for the GUI
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+  # D-Bus access for libsecret (keyring credential storage)
+  - --talk-name=org.freedesktop.secrets
+  # RuneLite stores its data in ~/.runelite
+  - --filesystem=~/.runelite
+
+modules:
+  - name: rlshim
+    buildsystem: simple
+    build-commands:
+      # Pre-extract curl-impersonate into the location CMake expects
+      - mkdir -p build/_deps/curl-impersonate/extracted
+      - tar -xzf _bundled/libcurl-impersonate.tar.gz -C build/_deps/curl-impersonate/extracted
+
+      # Configure and build
+      - >-
+        cmake -B build -S .
+        -GNinja
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_INSTALL_PREFIX=/app
+        -DFETCHCONTENT_SOURCE_DIR_JSON=$PWD/_bundled/json
+        -DFETCHCONTENT_SOURCE_DIR_GLFW=$PWD/_bundled/glfw
+        -DFETCHCONTENT_SOURCE_DIR_IMGUI=$PWD/_bundled/imgui
+      - cmake --build build
+      - cmake --install build
+
+      # Rename desktop file and icon to match Flatpak app ID
+      - mv /app/share/applications/rlshim.desktop /app/share/applications/life.srp.rlshim.desktop
+      - desktop-file-edit --set-key=Icon --set-value=life.srp.rlshim /app/share/applications/life.srp.rlshim.desktop
+      - install -Dm644 /app/share/pixmaps/rlshim.png /app/share/icons/hicolor/256x256/apps/life.srp.rlshim.png
+
+      # Install AppStream metainfo
+      - install -Dm644 packaging/flatpak/life.srp.rlshim.metainfo.xml /app/share/metainfo/life.srp.rlshim.metainfo.xml
+    sources:
+      # Main source
+      - type: dir
+        path: ../../
+
+      # nlohmann/json v3.12.0
+      - type: archive
+        url: https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.tar.gz
+        sha256: 4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187
+        dest: _bundled/json
+
+      # GLFW 3.3.8
+      - type: archive
+        url: https://github.com/glfw/glfw/archive/refs/tags/3.3.8.tar.gz
+        sha256: f30f42e05f11e5fc62483e513b0488d5bceeab7d9c5da0ffe2252ad81816c713
+        dest: _bundled/glfw
+
+      # Dear ImGui v1.92.8
+      - type: archive
+        url: https://github.com/ocornut/imgui/archive/refs/tags/v1.92.8.tar.gz
+        sha256: fecb33d33930e12ff53a34064e9d3a06c8f7c3e04408f14cd36c80e3faac863b
+        dest: _bundled/imgui
+
+      # libcurl-impersonate v1.5.6 (x86_64, glibc)
+      - type: file
+        only-arches:
+          - x86_64
+        url: https://github.com/lexiforest/curl-impersonate/releases/download/v1.5.6/libcurl-impersonate-v1.5.6.x86_64-linux-gnu.tar.gz
+        sha256: f07e25084020c54d6fd5654c8d458e09b3a44c312f88e480c255399f00487b25
+        dest: _bundled
+        dest-filename: libcurl-impersonate.tar.gz
+
+      # libcurl-impersonate v1.5.6 (aarch64, glibc)
+      - type: file
+        only-arches:
+          - aarch64
+        url: https://github.com/lexiforest/curl-impersonate/releases/download/v1.5.6/libcurl-impersonate-v1.5.6.aarch64-linux-gnu.tar.gz
+        sha256: b4e4f713655616efd2be83153d9057b5961c15e34563dde09a8b6798a8b331e9
+        dest: _bundled
+        dest-filename: libcurl-impersonate.tar.gz

@@ -60,3 +60,4 @@ build/
 .cache/
 creds
 target/
+.flatpak-builder

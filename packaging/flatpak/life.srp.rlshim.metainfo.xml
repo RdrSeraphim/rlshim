@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>life.srp.rlshim</id>
+  <name>rlshim</name>
+  <summary>A lightweight, native Linux launcher for RuneLite</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>BSD-2-Clause</project_license>
+
+  <description>
+    <p>
+      rlshim is a lightweight, native shim for launching RuneLite on Linux
+      with Jagex Accounts. It seeks to be as non-intrusive as possible, while
+      handling credential management securely via your system keyring and
+      handling RuneLite installation for you.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Native launcher — no Chromium Embedded Framework dependency</li>
+      <li>Secure credential storage via libsecret (gnome-keyring, KWallet, etc.)</li>
+      <li>Minimal footprint — under 32 MB including assets</li>
+      <li>Supports multi-character Jagex Accounts</li>
+    </ul>
+  </description>
+
+  <url type="homepage">https://github.com/RdrSeraphim/rlshim</url>
+  <url type="bugtracker">https://github.com/RdrSeraphim/rlshim/issues</url>
+
+  <launchable type="desktop-id">life.srp.rlshim.desktop</launchable>
+
+  <provides>
+    <binary>rlshim</binary>
+  </provides>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="1.0.1" date="2026-06-23">
+      <description>
+        <p>Add placeholders for empty character names in character selection menu.</p>
+      </description>
+    </release>
+    <release version="1.0.0" date="2026-06-14">
+      <description>
+        <p>Initial release.</p>
+      </description>
+    </release>
+  </releases>
+</component>
