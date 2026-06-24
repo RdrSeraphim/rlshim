@@ -23,7 +23,7 @@ modules:
     build-commands:
       # Pre-extract curl-impersonate into the location CMake expects
       - mkdir -p build/_deps/curl-impersonate/extracted
-      - tar -xzf _bundled/libcurl-impersonate.tar.gz -C build/_deps/curl-impersonate/extracted
+      - tar -xzf _bundled/libcurl-impersonate.tar.gz --no-same-owner -C build/_deps/curl-impersonate/extracted
 
       # Configure and build
       - >-
