@@ -34,7 +34,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-
       # ----- GLIBC BUILDS (Native Ubuntu) -----
       - name: Install dependencies (glibc)
         if: matrix.libc == 'glibc'
@@ -84,6 +83,9 @@ jobs:
   flatpak:
     name: Build Flatpak ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
+      options: --privileged
 
     strategy:
       fail-fast: false
@@ -99,7 +101,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Flatpak
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6.7
         with:
           bundle: life.srp.rlshim-${{ matrix.arch }}.flatpak
           manifest-path: packaging/flatpak/life.srp.rlshim.yml
@@ -162,4 +164,3 @@ jobs:
             artifacts/*.tar.gz
             artifacts/*.flatpak
             artifacts/aur_pkgbuilds.zip
-
