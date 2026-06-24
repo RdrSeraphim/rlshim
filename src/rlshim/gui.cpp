@@ -46,6 +46,7 @@ static std::string resolve_asset_path(const std::string& asset_name) {
     return asset_name;
 }
 
+#define STBI_ONLY_PNG
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
