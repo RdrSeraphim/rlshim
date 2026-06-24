@@ -1,0 +1,34 @@
+--- a/src/rlshim/logger.h
++++ b/src/rlshim/logger.h
+@@ -1,25 +1,25 @@
+ #ifndef RLSHIM_LOGGER_H
+ #define RLSHIM_LOGGER_H
+ #include <format>
+-#include <print>
++#include <iostream>
+ 
+ namespace logger {
+     template <typename... Args>
+     void info(std::format_string<Args...> fmt, Args&&... args) {
+-        std::print("\033[1;34m[info] \033[0m");
+-        std::println(fmt, std::forward<Args>(args)...);
++        std::cout << "\033[1;34m[info] \033[0m";
++        std::cout << std::format(fmt, std::forward<Args>(args)...) << "\n";
+     }
+ 
+     template <typename... Args>
+     void debug(std::format_string<Args...> fmt, Args&&... args) {
+-        std::print("\033[1;32m[debug] \033[0m");
+-        std::println(fmt, std::forward<Args>(args)...);
++        std::cout << "\033[1;32m[debug] \033[0m";
++        std::cout << std::format(fmt, std::forward<Args>(args)...) << "\n";
+     }
+ 
+     template <typename... Args>
+     void error(std::format_string<Args...> fmt, Args&&... args) {
+-        std::print("\033[1;31m[error] \033[0m");
+-        std::println(fmt, std::forward<Args>(args)...);
++        std::cout << "\033[1;31m[error] \033[0m";
++        std::cout << std::format(fmt, std::forward<Args>(args)...) << "\n";
+     }
+ }  // namespace logger

@@ -44,15 +44,28 @@ environment.systemPackages = [
 ];
 ```
 
-### rpm-based (Fedora, openSUSE, etc.)
-Packages are built and [hosted on COPR](https://copr.fedorainfracloud.org/coprs/srp/rlshim/). If there aren't builds for your distro that are otherwise supported in COPR, [lemme know](https://github.com/RdrSeraphim/rlshim/issues) and I'll enable it.
-
-If your distro is rpm-based but *not* supported by COPR and is *not* a fork of a distro supported by COPR, you'll want to grab the `.rpm` builds in the [latest release](https://github.com/RdrSeraphim/rlshim/releases/latest) and install with `sudo dnf install ./rlshim-*.rpm`.
+### Fedora (rpm-based)
+Packages are built and [hosted on COPR](https://copr.fedorainfracloud.org/coprs/srp/rlshim/). You can install `rlshim` by adding the COPR repo and installing the package:
 
 ```bash
 sudo dnf copr enable srp/rlshim
 sudo dnf install rlshim
 ```
+
+### openSUSE (15.6, 16.0, Slowroll, Tumbleweed)
+You can use the OBS Package Installer (`opi`) to install the package from the openSUSE Build Service:
+
+```bash
+sudo zypper in opi
+opi rlshim
+```
+
+If you prefer using repos, you can install it with:
+```bash
+sudo zypper ar https://download.opensuse.org/repositories/home:/RdrSeraphim:/rlshim/$(lsb_release -d | sed 's/.* //')/home:RdrSeraphim:rlshim.repo
+sudo zypper in rlshim
+```
+
 
 ### Arch Linux (AUR)
 <small>well, once the [supply chain attack](https://archlinux.org/news/active-aur-malicious-packages-incident/) stops and i can register</small>
