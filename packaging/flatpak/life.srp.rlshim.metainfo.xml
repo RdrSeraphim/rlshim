@@ -34,6 +34,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.1.1" date="2026-06-24">
+      <description>
+        <p>Version bump only to mitigate GitHub tag nuisance.</p>
+      </description>
+    </release>
     <release version="1.1.0" date="2026-06-24">
       <description>
         <p>Fix asset paths for flatpak.</p>
