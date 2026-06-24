@@ -35,7 +35,8 @@ static std::string resolve_asset_path(const std::string& asset_name) {
     std::vector<std::filesystem::path> global_paths = {
         std::filesystem::path("/usr/share/rlshim/data") / asset_name,
         std::filesystem::path("/usr/local/share/rlshim/data") / asset_name,
-        std::filesystem::path("/opt/rlshim/data") / asset_name};
+        std::filesystem::path("/opt/rlshim/data") / asset_name,
+        std::filesystem::path("/app/share/rlshim/data") / asset_name};
 
     for (const auto& path : global_paths) {
         if (std::filesystem::exists(path))

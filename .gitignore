@@ -61,3 +61,4 @@ build/
 creds
 target/
 .flatpak-builder
+packaging/flatpak/repo
