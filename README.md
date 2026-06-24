@@ -146,7 +146,7 @@ You can launch `rlshim` in your terminal or via your application launcher with t
 
 `rlshim` intercepts a few specific flags for its own configuration:
 
-- `--no-gui`: Disables the graphical ImGui character selector. If you have multiple characters linked to your Jagex Account, it will fall back to a terminal-based text prompt.
+- `--no-gui`: Disables using any GUI. If you have multiple characters linked to your Jagex Account or it's your first time running `rlshim`, it will fall back to a terminal-based text prompt.
 - `--logout`: Safely deletes your saved Jagex Account credentials from your system keyring (`libsecret`). The program will exit, and the next time you launch `rlshim`, you will be prompted to log in interactively again.
 
 ### Forwarded Flags
@@ -157,7 +157,7 @@ For example, running:
 ```bash
 rlshim --no-gui --mode=safe --developer-mode
 ```
-Will cause `rlshim` to use the CLI character selector (`--no-gui`), and then launch RuneLite with the remaining `--mode=safe --developer-mode` arguments.
+Will cause `rlshim` to use the CLI prompts where relevant (`--no-gui`), and then launch RuneLite with the remaining `--mode=safe --developer-mode` arguments.
 
 ### Credits
 GUI background image from Jagex. Inform me if there's a more ethical way of sourcing it.
