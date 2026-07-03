@@ -165,7 +165,7 @@ rlshim --no-gui --mode=safe --developer-mode
 ```
 Will cause `rlshim` to use the CLI prompts where relevant (`--no-gui`), and then launch RuneLite with the remaining `--mode=safe --developer-mode` arguments.
 
-### Credits
+## Credits
 GUI background image from Jagex. Inform me if there's a more ethical way of sourcing it.
 
 Some fonts and the RuneLite icon are sourced from [RuneLite's repo](https://github.com/runelite/runelite).
