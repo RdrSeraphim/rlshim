@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0](https://github.com/RdrSeraphim/rlshim/compare/v1.1.1..v1.2.0) - 2026-07-03
+
+### 🚀 Features
+
+- Trigger keyring unlock if available, prompt with critical errors ([55cce49](https://github.com/RdrSeraphim/rlshim/-/commit/55cce49a183d12e8dfeff5b13954e13b1e9c3d09))
+
 ## [1.1.1](https://github.com/RdrSeraphim/rlshim/compare/v1.0.1..v1.1.1) - 2026-06-24
 
 ### 🚀 Features
