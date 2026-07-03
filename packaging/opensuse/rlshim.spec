@@ -1,5 +1,5 @@
 Name:           rlshim
-Version:        1.1.1
+Version:        1.2.0
 Release:        1%{?dist}
 Summary:        A lightweight, native Linux launcher for RuneLite.
 
@@ -133,6 +133,8 @@ export CXXFLAGS="%{optflags} $USE_LLD $GCC_DIR_FLAG"
 %{_datadir}/rlshim/data/*.ttf
 
 %changelog
+* Fri Jul 03 2026 Seraphim Pardee <me@srp.life> - 1.2.0-1
+- Add prompts for keyring unlock and critical errors.
 * Wed Jun 24 2026 Seraphim Pardee <me@srp.life> - 1.1.1-1
 - Version bump only to mitigate GitHub tag nuisance.
 * Wed Jun 24 2026 Seraphim Pardee <me@srp.life> - 1.1.0-1
