@@ -55,4 +55,13 @@ namespace cli {
         }
     }
 
+    void warning_prompt(const std::string& warning) {
+        std::cout << "\n================ rlshim warning ================\n\n";
+        std::cout << warning << "\n\n";
+        std::cout << "please fix this issue and restart the application.\n\n";
+        std::cout << "press [enter] to exit...\n";
+        std::string input;
+        std::getline(std::cin, input);
+    }
+
 }  // namespace cli

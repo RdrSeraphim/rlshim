@@ -42,15 +42,38 @@ int main(int argc, char* argv[]) {
 
     if (!runelite::is_valid_java_installed()) {
         logger::error("java 11+ is not installed or not in PATH");
+        use_gui ? gui::warning_prompt("java error", "java 11+ is not installed or not in PATH", 230)
+                : cli::warning_prompt("java 11+ is not installed or not in PATH");
         return 1;
     }
     logger::info("java installation found ✔");
 
     if (!runelite::establish_home()) {
         logger::error("failed to find or create ~/.runelite");
+        use_gui
+            ? gui::warning_prompt("home error",
+                                  "failed to find or create ~/.runelite, this is likely a permissions issue.\nensure "
+                                  "that the user running this application has write access to their home directory.")
+            : cli::warning_prompt(
+                  "failed to find or create ~/.runelite, this is likely a permissions issue. ensure that the user "
+                  "running this application has write access to their home directory.");
         return 1;
     }
     logger::info("~/.runelite found ✔");
+
+    if (!auth::keyring::is_available()) {
+        use_gui
+            ? gui::warning_prompt(
+                  "keyring error",
+                  "rlshim could not find a valid keyring. credentials cannot\nbe stored securely at this point. please "
+                  "install libsecret and a keyring\nmanager (e.g. gnome-keyring, kwallet, etc.) to proceed further.")
+            : cli::warning_prompt(
+                  "rlshim could not find a valid keyring. credentials cannot be stored securely at this point. please "
+                  "install libsecret and a keyring manager (e.g. gnome-keyring, kwallet, etc.) to proceed further.");
+        return 1;
+    } else {
+        logger::info("keyring available ✔");
+    }
 
     auth::auth_session session;
     auto creds_opt = auth::read_session();
@@ -105,6 +128,12 @@ int main(int argc, char* argv[]) {
 
     if (!runelite::establish_jar()) {
         logger::error("failed to ensure runelite.jar exists");
+        use_gui ? gui::warning_prompt("runelite error",
+                                      "failed to ensure runelite.jar exists\n\nensure that you have write "
+                                      "permissions to ~/.runelite and that there is sufficient disk space.")
+                : cli::warning_prompt(
+                      "failed to ensure runelite.jar exists. ensure that you have write permissions to ~/.runelite and "
+                      "that there is sufficient disk space.");
         return 1;
     }
     std::string java = "java";

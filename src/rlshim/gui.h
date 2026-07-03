@@ -14,4 +14,5 @@ namespace gui {
                                               const std::string& url_placeholder);
 
     std::optional<auth::game_account> prompt_for_character(const std::vector<auth::game_account>& accounts);
+    void warning_prompt(const std::string& short_title, const std::string& warning, const int height = 260);
 }  // namespace gui

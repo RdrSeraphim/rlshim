@@ -96,6 +96,7 @@ namespace gui {
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
             glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+            glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
             window = glfwCreateWindow(width, height, title, nullptr, nullptr);
             if (window == nullptr)
@@ -146,14 +147,18 @@ namespace gui {
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
-            if (bg_texture != 0 && bg_height > 0) {
+            if (bg_texture != 0 && bg_width > 0 && bg_height > 0) {
                 ImVec2 display_size = ImGui::GetIO().DisplaySize;
-                float scale = display_size.y / (float)bg_height;
+                float scale_x = display_size.x / (float)bg_width;
+                float scale_y = display_size.y / (float)bg_height;
+                float scale = (scale_x > scale_y) ? scale_x : scale_y;
                 float scaled_w = bg_width * scale;
-                float scaled_h = display_size.y;
-                ImVec2 p_min = ImVec2((display_size.x - scaled_w) * 0.5f, 0.0f);
-                ImVec2 p_max = ImVec2(p_min.x + scaled_w, scaled_h);
+                float scaled_h = bg_height * scale;
+                ImVec2 p_min = ImVec2((display_size.x - scaled_w) * 0.5f, (display_size.y - scaled_h) * 0.5f);
+                ImVec2 p_max = ImVec2(p_min.x + scaled_w, p_min.y + scaled_h);
                 ImGui::GetBackgroundDrawList()->AddImage((ImTextureID)(intptr_t)bg_texture, p_min, p_max);
+                ImGui::GetBackgroundDrawList()->AddRect(ImVec2(0, 0), display_size, IM_COL32(255, 255, 0, 255), 0.0f, 0,
+                                                        2.0f);  // yellow, 2px
             }
         }
 
@@ -382,6 +387,53 @@ namespace gui {
         }
 
         return result;
+    }
+
+    void warning_prompt(const std::string& short_title, const std::string& warning, const int height) {
+        GUIContext ctx(std::string("rlshim - " + short_title).c_str(), 600, height);
+        bool submitted = false;
+        while (!glfwWindowShouldClose(ctx.window) && !submitted) {
+            ctx.begin_frame();
+
+            ImGui::SetNextWindowPos(ImVec2(0, 0));
+            ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+            ImGui::Begin(std::string("rlshim - " + short_title).c_str(), nullptr,
+                         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                             ImGuiWindowFlags_NoBackground);
+
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
+            ImFont* quill_font =
+                ImGui::GetIO().Fonts->AddFontFromFileTTF(resolve_asset_path("runescape_quill.ttf").c_str());
+            ImGui::PushFont(quill_font, 64.0f);
+            draw_centered_text("rlshim");
+            ImGui::PopFont();
+            ImGui::Dummy(ImVec2(0.0f, ImGui::GetTextLineHeight()));
+
+            draw_centered_text(std::string("warning: " + warning).c_str());
+            ImGui::Dummy(ImVec2(0.0f, ImGui::GetTextLineHeight()));
+
+            draw_centered_text(std::string("run rlshim in a terminal for additional information.\nplease fix this "
+                                           "issue and restart the application.")
+                                   .c_str());
+            ImGui::PopStyleColor();
+            ImGui::Dummy(ImVec2(0.0f, ImGui::GetTextLineHeight()));
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+
+            if (ImGui::Button("okay, i understand", ImVec2(120, 40))) {
+                submitted = true;
+            }
+
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor(4);
+            ImGui::End();
+
+            ctx.end_frame();
+        }
     }
 
 }  // namespace gui

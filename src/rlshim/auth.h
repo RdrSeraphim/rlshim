@@ -42,6 +42,7 @@ namespace auth {
     bool logout();
 
     namespace keyring {
+        bool is_available();
         bool store(const std::string& key, const std::string& value);
         std::optional<std::string> lookup(const std::string& key);
         bool clear(const std::string& key);

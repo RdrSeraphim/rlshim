@@ -459,6 +459,76 @@ namespace auth {
     }
 
     namespace keyring {
+
+        bool is_available() {
+            GError* error = nullptr;
+            SecretService* service = secret_service_get_sync(SECRET_SERVICE_LOAD_COLLECTIONS, nullptr, &error);
+
+            if (error != nullptr) {
+                logger::error("secret service not available: {}", error->message);
+                g_error_free(error);
+                return false;
+            }
+
+            if (service == nullptr) {
+                logger::error("no secret service provider found on D-Bus");
+                return false;
+            }
+
+            SecretCollection* collection = secret_collection_for_alias_sync(service, SECRET_COLLECTION_DEFAULT,
+                                                                            SECRET_COLLECTION_NONE, nullptr, &error);
+
+            if (error != nullptr) {
+                logger::error("failed to access default keyring collection: {}", error->message);
+                g_error_free(error);
+                g_object_unref(service);
+                return false;
+            }
+
+            if (collection == nullptr) {
+                logger::error("no default keyring collection found. is your keyring set up?");
+                g_object_unref(service);
+                return false;
+            }
+
+            bool locked = secret_collection_get_locked(collection);
+
+            if (locked) {
+                logger::info("default keyring collection is locked, attempting to unlock...");
+
+                GList* to_unlock = g_list_append(nullptr, collection);
+                GList* unlocked = nullptr;
+
+                secret_service_unlock_sync(service, to_unlock, nullptr, &unlocked, &error);
+                g_list_free(to_unlock);
+
+                if (error != nullptr) {
+                    logger::error("failed to unlock keyring: {}", error->message);
+                    g_error_free(error);
+                    g_object_unref(collection);
+                    g_object_unref(service);
+                    return false;
+                }
+
+                bool was_unlocked = unlocked != nullptr;
+                g_list_free(unlocked);
+
+                if (!was_unlocked) {
+                    logger::error("keyring unlock was dismissed or failed");
+                    g_object_unref(collection);
+                    g_object_unref(service);
+                    return false;
+                }
+
+                logger::info("keyring unlocked successfully");
+            }
+
+            g_object_unref(collection);
+            g_object_unref(service);
+
+            return true;
+        }
+
         const SecretSchema* get_schema() {
             static const SecretSchema schema = {
                 .name = "life.srp.rlshim",
