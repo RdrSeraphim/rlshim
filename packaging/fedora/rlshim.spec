@@ -27,6 +27,8 @@ Requires:       libsecret
 Requires:       openssl
 Requires:       glfw
 Requires:       glibc
+# RuneLite needs a JRE (11+); rlshim can't launch it otherwise, so pull one in.
+Requires:       java >= 1:11
 
 %description
 rlshim is a lightweight, native Linux launcher for RuneLite, designed as an alternative to the official AppImage and Flatpak.

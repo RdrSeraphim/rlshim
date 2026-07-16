@@ -5,7 +5,7 @@ pkgdesc="A lightweight, native Linux launcher for RuneLite."
 arch=('x86_64' 'aarch64')
 url="https://github.com/RdrSeraphim/rlshim"
 license=('BSD-2-Clause')
-depends=('libsecret' 'openssl' 'glfw' 'glibc')
+depends=('libsecret' 'openssl' 'glfw' 'glibc' 'java-runtime>=11')
 makedepends=('cmake' 'clang' 'make' 'pkgconf' 'curl' 'git' 'libx11' 'libxcursor' 'libxi' 'libxinerama' 'libxrandr')
 provides=('rlshim')
 conflicts=('rlshim')

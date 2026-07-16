@@ -56,9 +56,11 @@ CMakeUserPresets.json
 # End of https://www.toptal.com/developers/gitignore/api/cmake,c++
 
 build/
+build-tests/
 .vscode/
 .cache/
 creds
 target/
 .flatpak-builder
 packaging/flatpak/repo
+.claude/

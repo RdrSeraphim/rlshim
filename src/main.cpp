@@ -98,6 +98,12 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
+        // Only the OAuth tokens are replaced here. The game session_id is
+        // deliberately preserved from the stored session: it comes from a
+        // separate, interactive consent flow (get_consent_id_token ->
+        // get_session_id) that refreshing the OAuth token does NOT re-issue.
+        // Overwriting it would force the user back through that browser flow on
+        // every launch. It appears to be long-lived, so we keep reusing it.
         session.tokens = refreshed_session->tokens;
         auth::save_session(session);
     }
@@ -137,7 +143,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     std::string java = "java";
-    std::string jar_path = std::string(std::getenv("HOME")) + "/.runelite/runelite.jar";
+    std::string jar_path = runelite::jar_path();
 
     pid_t pid = fork();
     if (pid < 0) {

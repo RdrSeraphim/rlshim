@@ -18,13 +18,17 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
+option(RLSHIM_BUILD_APP "Build the rlshim application (requires libsecret, curl, glfw, etc.)" ON)
+option(RLSHIM_BUILD_TESTS "Build unit tests for rlshim's pure logic" OFF)
+
+include(FetchContent)
+
+if(RLSHIM_BUILD_APP)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBSECRET REQUIRED IMPORTED_TARGET libsecret-1)
 
 find_package(CURL REQUIRED)
-
-include(FetchContent)
 
 set(CURL_IMP_VERSION "1.5.6")
 set(CURL_IMP_DIR "${CMAKE_BINARY_DIR}/_deps/curl-impersonate")
@@ -101,12 +105,13 @@ set_source_files_properties(${IMGUI_SOURCES} PROPERTIES COMPILE_FLAGS "-w")
 
 find_package(OpenGL REQUIRED)
 
-add_executable(rlshim 
-    src/main.cpp 
-    src/rlshim/auth.cpp 
+add_executable(rlshim
+    src/main.cpp
+    src/rlshim/auth.cpp
     src/rlshim/runelite.cpp
     src/rlshim/cli.cpp
     src/rlshim/gui.cpp
+    src/rlshim/parse.cpp
     ${IMGUI_SOURCES}
 )
 
@@ -181,10 +186,54 @@ set(CPACK_PACKAGE_CONTACT "Seraphim Pardee <me@srp.life>")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A lightweight, native Linux launcher for RuneLite.")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsecret-1-0")
-set(CPACK_RPM_PACKAGE_REQUIRES "libsecret")
+# RuneLite requires a JRE (11+). It is properly RuneLite's dependency, but since
+# rlshim cannot function without it, we declare it here so users don't have to
+# hunt it down themselves. The alternations/virtual provides let any conforming
+# JRE satisfy it rather than pinning a specific vendor.
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsecret-1-0, default-jre | java11-runtime")
+set(CPACK_RPM_PACKAGE_REQUIRES "libsecret, java >= 1:11")
 set(CPACK_RPM_PACKAGE_LICENSE "BSD-2-Clause")
 
 set(CPACK_COMPONENTS_GROUPING "ALL_COMPONENTS_IN_ONE")
 
 include(CPack)
+
+endif()  # RLSHIM_BUILD_APP
+
+if(RLSHIM_BUILD_TESTS)
+    enable_testing()
+
+    # Fetch single headers directly (pinned) rather than adding their CMake
+    # projects. doctest's old cmake_minimum_required breaks on CMake >= 4, and
+    # this keeps the test build free of the app's heavy dependency tree.
+    function(rlshim_fetch_header url dest)
+        if(NOT EXISTS "${dest}")
+            file(DOWNLOAD "${url}" "${dest}" TLS_VERIFY ON STATUS _dl_status)
+            list(GET _dl_status 0 _dl_code)
+            if(NOT _dl_code EQUAL 0)
+                message(FATAL_ERROR "Failed to download ${url}: ${_dl_status}")
+            endif()
+        endif()
+    endfunction()
+
+    set(DOCTEST_VERSION "2.4.11")
+    set(JSON_VERSION "3.12.0")
+    rlshim_fetch_header(
+        "https://raw.githubusercontent.com/doctest/doctest/v${DOCTEST_VERSION}/doctest/doctest.h"
+        "${CMAKE_BINARY_DIR}/_deps/test-include/doctest/doctest.h")
+    rlshim_fetch_header(
+        "https://github.com/nlohmann/json/releases/download/v${JSON_VERSION}/json.hpp"
+        "${CMAKE_BINARY_DIR}/_deps/test-include/nlohmann/json.hpp")
+
+    # Only the pure logic is linked in — no curl/libsecret/imgui needed.
+    add_executable(rlshim_tests
+        tests/test_parse.cpp
+        src/rlshim/parse.cpp
+    )
+    target_include_directories(rlshim_tests PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_BINARY_DIR}/_deps/test-include
+    )
+
+    add_test(NAME rlshim_tests COMMAND rlshim_tests)
+endif()

@@ -5,7 +5,6 @@
 [![obs build result](https://img.shields.io/obs/home%3ARdrSeraphim%3Arlshim/rlshim/openSUSE_Tumbleweed/x86_64?style=flat-square&logo=OpenSUSE&label=obs)](https://build.opensuse.org/package/show/home:RdrSeraphim:rlshim/rlshim)
 [![discord](https://img.shields.io/discord/1519054041429049454?style=flat-square&label=discord)](https://discord.gg/3eaX6FaHb7)
 
-
 A lightweight, native shim for launching RuneLite on Linux with Jagex Accounts.
 
 > Note: This is *relatively* stable software. It should Just Work™ but I cannot account for every use-case in my own testing. [Lemme know if it breaks.](https://github.com/RdrSeraphim/rlshim/issues)
@@ -13,6 +12,7 @@ A lightweight, native shim for launching RuneLite on Linux with Jagex Accounts.
 ## What it does
 
 You might wish to view `rlshim` like a very simplified [Bolt](https://codeberg.org/Adamcake/Bolt). There's no RS3 support (nor do I plan on it), there's no custom launch command options (beyond passing flags to RuneLite), or custom RuneLite jar support (sorta, you can replace `~/.runelite/RuneLite.jar` with whatever you want). However, compared to Bolt, `rlshim` offers:
+
 - A native launcher for RuneLite that doesn't depend on the Chromium Embedded Framework. `rlshim` (including assets) weighs <32mb compared to Bolt's ~318mb installation.<sup><a href="#fn-1">[1]</a></sup>
 - A more secure handling of credentials by using `libsecret` (i.e. gnome-keyring, kwallet, keepassxc, pass-secret-service, etc.) to store Jagex Account credentials encrypted and using syscalls to prevent process memory from leaking creds when it gets pulled out of storage. No plaintext local file storage here.
 - A non-obtrusive flow. The only time you'll see an interface is if it's your first time logging in, or you have to select a character (since Jagex Accounts support up to 20 linked).
@@ -27,41 +27,50 @@ When `rlshim` is installed, a desktop entry for RuneLite gets made. Running it r
 
 Where possible, `rlshim` supports x86_64 and aarch64 on glibc and/or musl based environments. For glibc-based environments (most of you), read below to find instructions for your distro. For musl-based environments, you'll need to use the [binary `.tar.gz` releases](https://github.com/RdrSeraphim/rlshim/releases/latest) -- I assume you know what you're doing.
 
-⚠️ **WARNING: `rlshim` does not have Java as a dependency in any of its packages, since it's a RuneLite dependency (properly speaking). Make sure you have Java 11+ installed and `java` is available on your `$PATH`.**
+⚠️ **NOTE: RuneLite requires Java 11+.** The distro packages (deb, rpm, AUR, Fedora, openSUSE) declare a JRE dependency and the Flatpak bundles one, so you shouldn't need to do anything. If you install via the raw `.tar.gz` binary release (or build it yourself), make sure Java 11+ is installed and `java` is available on your `$PATH`.
 
 If your distro isn't here and you're willing to provide a mechanism to make packages for it, feel free to make a pull request.
 
 ### Flatpak (Any Distro)
+
 Pre-built `.flatpak` bundles are available on the [Releases](https://github.com/RdrSeraphim/rlshim/releases) page. Download the appropriate architecture for your system and install it:
+
 ```bash
 flatpak install ./life.srp.rlshim-*.flatpak
 ```
 
 ### deb-based distros (Debian, Ubuntu, Mint, etc.)
+
 Check the [Releases](https://github.com/RdrSeraphim/rlshim/releases) page for pre-compiled `.deb` packages. Download the latest version and install it via:
+
 ```bash
 sudo apt install ./rlshim-*.deb
 ```
 
 ### Arch Linux (AUR)
+
 Well, once the [supply chain attack](https://archlinux.org/news/active-aur-malicious-packages-incident/) stops and I can register an account. In the meantime, you can fetch the PKGBUILDs (zipped as `aur_pkgbuilds.zip`) from the [Releases page](https://github.com/RdrSeraphim/rlshim/releases) and build it yourself with `makepkg -si`.
 
 For the stable binary release:  
+
 ```bash
 yay -S rlshim-bin
 ```
 
 For the stable source release:
+
 ```bash
 yay -S rlshim
 ```
 
 For the "nightly" source release:  
+
 ```bash
 yay -S rlshim-git
 ```
 
 ### Fedora (rpm-based)
+
 Packages are built and [hosted on COPR](https://copr.fedorainfracloud.org/coprs/srp/rlshim/). You can install `rlshim` by adding the COPR repo and installing the package:
 
 ```bash
@@ -70,6 +79,7 @@ sudo dnf install rlshim
 ```
 
 ### openSUSE (15.6, 16.0, Slowroll, Tumbleweed)
+
 You can use the OBS Package Installer (`opi`) to install the package from the openSUSE Build Service:
 
 ```bash
@@ -85,12 +95,15 @@ sudo zypper in rlshim
 ```
 
 ### Nix / NixOS (Flakes)
+
 Add the repo to your flake.nix inputs:
+
 ```nix
 rlshim = { url = "github:RdrSeraphim/rlshim"; inputs.nixpkgs.follows = "nixpkgs"; };
 ```
 
 Then add it to a package list somewhere:
+
 ```nix
 environment.systemPackages = [
   inputs.rlshim.packages.${system}.default
@@ -100,19 +113,23 @@ environment.systemPackages = [
 ## Building
 
 ### 1. Install Dependencies
+
 You will need a modern C++ compiler (supporting C++23), CMake, and a few development headers for the GUI and Keyring. Depending on your Linux distribution, install the following packages:
 
 **Debian / Ubuntu:**
+
 ```bash
 sudo apt install clang build-essential cmake pkg-config libsecret-1-dev libssl-dev libglfw3-dev libgl1-mesa-dev libcurl4-openssl-dev libx11-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
 ```
 
 **Fedora / RHEL:**
+
 ```bash
 sudo dnf install clang @development-tools cmake pkgconf libsecret-devel openssl-devel glfw-devel mesa-libGL-devel libcurl-devel libX11-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel git
 ```
 
 **Arch Linux:**
+
 ```bash
 sudo pacman -S clang base-devel cmake pkgconf libsecret openssl curl libx11 libxcursor libxi libxinerama libxrandr git glfw-wayland # (or glfw-x11)
 ```
@@ -146,7 +163,7 @@ make clean
 
 ## Usage & Flags
 
-You can launch `rlshim` in your terminal or via your application launcher with the RuneLite desktop entry. 
+You can launch `rlshim` in your terminal or via your application launcher with the RuneLite desktop entry.
 
 ### Built-in Flags
 
@@ -160,16 +177,20 @@ You can launch `rlshim` in your terminal or via your application launcher with t
 **Any other flags** passed to `rlshim` are safely ignored by the shim and passed directly through to `runelite.jar`.
 
 For example, running:
+
 ```bash
 rlshim --no-gui --mode=safe --developer-mode
 ```
+
 Will cause `rlshim` to use the CLI prompts where relevant (`--no-gui`), and then launch RuneLite with the remaining `--mode=safe --developer-mode` arguments.
 
 ## Credits
+
 GUI background image from Jagex. Inform me if there's a more ethical way of sourcing it.
 
 Some fonts and the RuneLite icon are sourced from [RuneLite's repo](https://github.com/runelite/runelite).
-```
+
+```plaintext
 BSD 2-Clause License
 
 Copyright (c) 2016-2017, Adam <Adam@sigterm.info>

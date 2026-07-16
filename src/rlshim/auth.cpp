@@ -3,6 +3,7 @@
 #include "curl.h"
 #include "gui.h"
 #include "logger.h"
+#include "parse.h"
 
 #include <curl/curl.h>
 #include <libsecret/secret.h>
@@ -127,30 +128,10 @@ namespace auth {
         }
     }
 
-    std::string base64_url_encode(const std::vector<unsigned char>& input) {
-        static const char b64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-        std::string out;
-        out.reserve(((input.size() + 2) / 3) * 4);
-        int val = 0;
-        int valb = -6;
-        for (unsigned char c : input) {
-            val = (val << 8) + c;
-            valb += 8;
-            while (valb >= 0) {
-                out.push_back(b64_table[(val >> valb) & 0x3F]);
-                valb -= 6;
-            }
-        }
-        if (valb > -6) {
-            out.push_back(b64_table[((val << 8) >> (valb + 8)) & 0x3F]);
-        }
-        return out;
-    }
-
     std::string generate_random_string(size_t length) {
         std::vector<unsigned char> bytes(length);
         RAND_bytes(bytes.data(), bytes.size());
-        return base64_url_encode(bytes).substr(0, length);
+        return parse::base64_url_encode(bytes).substr(0, length);
     }
 
     std::string sha256_base64url(const std::string& input) {
@@ -167,7 +148,7 @@ namespace auth {
         }
 
         std::vector<unsigned char> hash_vec(hash, hash + lengthOfHash);
-        return base64_url_encode(hash_vec);
+        return parse::base64_url_encode(hash_vec);
     }
 
     std::optional<std::string> get_consent_id_token(const std::string& first_id_token, bool use_gui) {
@@ -222,21 +203,13 @@ namespace auth {
             return std::nullopt;
         }
 
-        std::string location = *pasted_url_opt;
-        std::string id_token_search = "id_token=";
-        size_t id_token_pos = location.find(id_token_search);
-        if (id_token_pos == std::string::npos) {
+        auto id_token = parse::extract_query_param(*pasted_url_opt, "id_token");
+        if (!id_token) {
             logger::error("no id_token found in the pasted URL");
             return std::nullopt;
         }
 
-        size_t start = id_token_pos + id_token_search.length();
-        size_t end = location.find("&", start);
-        if (end == std::string::npos) {
-            end = location.length();
-        }
-
-        return location.substr(start, end - start);
+        return id_token;
     }
 
     std::optional<std::vector<game_account>> get_game_accounts(const std::string& session_id) {
@@ -385,19 +358,12 @@ namespace auth {
             return std::nullopt;
         }
 
-        std::string pasted_url = *pasted_url_opt;
-
-        size_t code_pos = pasted_url.find("code=");
-        if (code_pos == std::string::npos) {
+        auto code_opt = parse::extract_query_param(*pasted_url_opt, "code");
+        if (!code_opt) {
             logger::error("Could not find 'code=' in the pasted URL");
             return std::nullopt;
         }
-
-        std::string code = pasted_url.substr(code_pos + 5);
-        size_t ampersand_pos = code.find('&');
-        if (ampersand_pos != std::string::npos) {
-            code = code.substr(0, ampersand_pos);
-        }
+        std::string code = *code_opt;
 
         CURL* tcurl = curl_easy_init();
         if (!tcurl)
