@@ -12,7 +12,7 @@
 using json = nlohmann::json;
 
 #ifndef RLSHIM_VERSION
-#define RLSHIM_VERSION "1.2.0"
+#define RLSHIM_VERSION "1.2.1"
 #endif
 
 int main(int argc, char* argv[]) {
