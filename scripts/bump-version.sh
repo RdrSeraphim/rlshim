@@ -143,10 +143,18 @@ else
     echo "  (no -m given: changelogs left untouched)"
 fi
 
-# --- optional git tag -------------------------------------------------------
+# --- optional commit + git tag ----------------------------------------------
+# A tag must point at the commit that *contains* the bump, so --tag commits the
+# edited files first and tags that commit. Tagging without committing would put
+# the tag on the previous (un-bumped) commit, one behind the actual release.
 if [[ "$DO_TAG" -eq 1 ]]; then
+    git -C "$ROOT" add -- \
+        "$CMAKE" "$MAIN" "$FEDORA_SPEC" "$OPENSUSE_SPEC" "$FLATPAK_META"
+    git -C "$ROOT" commit -q -m "chore: bump version to ${NEW}"
+    echo "  git commit              chore: bump version to ${NEW}"
     git -C "$ROOT" tag -a "v${NEW}" -m "rlshim v${NEW}"
-    echo "  git tag                 v${NEW}"
+    echo "  git tag                 v${NEW} (-> release commit)"
+    echo "Done. Push with: git push && git push origin v${NEW}"
+else
+    echo "Done. Review the diff, commit, and tag v${NEW}."
 fi
-
-echo "Done. Review the diff, commit, and (if you didn't pass --tag) tag v${NEW}."

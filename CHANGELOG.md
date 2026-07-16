@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1](https://github.com/RdrSeraphim/rlshim/compare/v1.2.0..v1.2.1) - 2026-07-16
+
+### 🐛 Bug Fixes
+
+- Improve runelite handling, add java dependency, unit tests ([a24da7f](https://github.com/RdrSeraphim/rlshim/-/commit/a24da7fd968c820732cef1bdd0c5370cd8205e13))
+
 ## [1.2.0](https://github.com/RdrSeraphim/rlshim/compare/v1.1.1..v1.2.0) - 2026-07-03
 
 ### 🚀 Features
