@@ -149,7 +149,7 @@ fi
 # the tag on the previous (un-bumped) commit, one behind the actual release.
 if [[ "$DO_TAG" -eq 1 ]]; then
     git -C "$ROOT" add -- \
-        "$CMAKE" "$MAIN" "$FEDORA_SPEC" "$OPENSUSE_SPEC" "$FLATPAK_META"
+        "$CMAKE" "$MAIN" "$FEDORA_SPEC" "$OPENSUSE_SPEC" "$FLATPAK_META" "CHANGELOG.md"
     git -C "$ROOT" commit -q -m "chore: bump version to ${NEW}"
     echo "  git commit              chore: bump version to ${NEW}"
     git -C "$ROOT" tag -a "v${NEW}" -m "rlshim v${NEW}"

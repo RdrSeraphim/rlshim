@@ -1,7 +1,9 @@
 #include <sys/prctl.h>
 #include <unistd.h>
-#include <cstdlib>
 #include <nlohmann/json.hpp>
+#include <format>
+
+#include "CLI11.hpp"
 
 #include "rlshim/auth.h"
 #include "rlshim/cli.h"
@@ -16,22 +18,26 @@ using json = nlohmann::json;
 #endif
 
 int main(int argc, char* argv[]) {
-    logger::info("rlshim v{} - https://github.com/RdrSeraphim/rlshim", RLSHIM_VERSION);
+    CLI::App app{std::format("rlshim v{} - https://github.com/RdrSeraphim/rlshim\n", RLSHIM_VERSION) +
+        "A lightweight, native shim for launching RuneLite on Linux with Jagex Accounts.", "rlshim"};
+    argv = app.ensure_utf8(argv);
 
-    bool use_gui = true;
-    bool do_logout = false;
-    std::vector<char*> rl_args;
+    bool dont_use_gui{false};
+    app.add_flag("-t,--no-gui", dont_use_gui, "disables gui, all applicable prompts sent to stdout");
 
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--no-gui") {
-            use_gui = false;
-        } else if (arg == "--logout") {
-            do_logout = true;
-        } else {
-            rl_args.push_back(argv[i]);
-        }
-    }
+    bool do_logout{false};
+    app.add_flag("-l,--logout", do_logout, "log out of rlshim, clearing all saved credentials");
+
+    bool use_saved_character{false};
+    app.add_flag("-s,--use-saved-char", use_saved_character, "use the current saved character or, if none saved, save the character chosen at the selection menu");
+
+    bool clear_saved_character{false};
+    app.add_flag("-c,--clear-saved-char", clear_saved_character, "clears the currently saved character. if --use-saved-char is set, this clears the saved character and will save the next selected character");
+
+    std::vector<std::string> rl_flags{};
+    app.add_option("-f,--flags", rl_flags, "flags to pass to RuneLite")->delimiter(' ');
+
+    CLI11_PARSE(app, argc, argv);
 
     if (do_logout) {
         auth::logout();
@@ -42,34 +48,36 @@ int main(int argc, char* argv[]) {
 
     if (!runelite::is_valid_java_installed()) {
         logger::error("java 11+ is not installed or not in PATH");
-        use_gui ? gui::warning_prompt("java error", "java 11+ is not installed or not in PATH", 230)
-                : cli::warning_prompt("java 11+ is not installed or not in PATH");
+        dont_use_gui ? cli::warning_prompt("java 11+ is not installed or not in PATH")
+            : gui::warning_prompt("java error", "java 11+ is not installed or not in PATH", 230);
         return 1;
     }
     logger::info("java installation found ✔");
 
     if (!runelite::establish_home()) {
         logger::error("failed to find or create ~/.runelite");
-        use_gui
-            ? gui::warning_prompt("home error",
-                                  "failed to find or create ~/.runelite, this is likely a permissions issue.\nensure "
-                                  "that the user running this application has write access to their home directory.")
-            : cli::warning_prompt(
+        dont_use_gui
+            ? cli::warning_prompt(
                   "failed to find or create ~/.runelite, this is likely a permissions issue. ensure that the user "
-                  "running this application has write access to their home directory.");
+                  "running this application has write access to their home directory.")
+            : gui::warning_prompt("home error",
+                                  "failed to find or create ~/.runelite, this is likely a permissions issue.\nensure "
+                                  "that the user running this application has write access to their home directory.");
+
         return 1;
     }
     logger::info("~/.runelite found ✔");
 
     if (!auth::keyring::is_available()) {
-        use_gui
-            ? gui::warning_prompt(
+        dont_use_gui
+            ? cli::warning_prompt(
+                  "rlshim could not find a valid keyring. credentials cannot be stored securely at this point. please "
+                  "install libsecret and a keyring manager (e.g. gnome-keyring, kwallet, etc.) to proceed further.")
+            : gui::warning_prompt(
                   "keyring error",
                   "rlshim could not find a valid keyring. credentials cannot\nbe stored securely at this point. please "
-                  "install libsecret and a keyring\nmanager (e.g. gnome-keyring, kwallet, etc.) to proceed further.")
-            : cli::warning_prompt(
-                  "rlshim could not find a valid keyring. credentials cannot be stored securely at this point. please "
-                  "install libsecret and a keyring manager (e.g. gnome-keyring, kwallet, etc.) to proceed further.");
+                  "install libsecret and a keyring\nmanager (e.g. gnome-keyring, kwallet, etc.) to proceed further.");
+
         return 1;
     } else {
         logger::info("keyring available ✔");
@@ -80,7 +88,7 @@ int main(int argc, char* argv[]) {
 
     if (!creds_opt || creds_opt->empty() || creds_opt->at(0).tokens.refresh_token.empty()) {
         logger::info("no valid credentials found. starting interactive login...");
-        auto new_session = auth::do_interactive_login(use_gui);
+        auto new_session = auth::do_interactive_login(dont_use_gui);
         if (!new_session) {
             logger::error("login failed or aborted");
             return 1;
@@ -119,27 +127,48 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    auth::game_account selected_account;
+    if (clear_saved_character) {
+        runelite::save_character("");
+    }
+
+    std::optional<auth::game_account> selected_account;
     if (session.accounts.size() == 1) {
         selected_account = session.accounts[0];
     } else {
-        auto acc_opt =
-            use_gui ? gui::prompt_for_character(session.accounts) : cli::prompt_for_character(session.accounts);
-        if (!acc_opt) {
-            logger::error("character selection aborted or failed");
-            return 1;
+        if (use_saved_character && !clear_saved_character) {
+            std::string saved_name = runelite::read_saved_character();
+            if (!saved_name.empty()) {
+                for (const auth::game_account& acc : session.accounts) {
+                    if (acc.displayName == saved_name) {
+                        selected_account = acc;
+                        break;
+                    }
+                }
+            }
         }
-        selected_account = *acc_opt;
+        if (!selected_account) {
+            auto acc_opt =
+                dont_use_gui ? cli::prompt_for_character(session.accounts) : gui::prompt_for_character(session.accounts);
+            if (!acc_opt) {
+                logger::error("character selection aborted or failed");
+                return 1;
+            }
+            selected_account = *acc_opt;
+            if (use_saved_character)
+                runelite::save_character(selected_account->displayName);
+        }
     }
 
     if (!runelite::establish_jar()) {
         logger::error("failed to ensure runelite.jar exists");
-        use_gui ? gui::warning_prompt("runelite error",
-                                      "failed to ensure runelite.jar exists\n\nensure that you have write "
-                                      "permissions to ~/.runelite and that there is sufficient disk space.")
-                : cli::warning_prompt(
+        dont_use_gui
+            ? cli::warning_prompt(
                       "failed to ensure runelite.jar exists. ensure that you have write permissions to ~/.runelite and "
-                      "that there is sufficient disk space.");
+                      "that there is sufficient disk space.")
+            : gui::warning_prompt("runelite error",
+                      "failed to ensure runelite.jar exists\n\nensure that you have write "
+                      "permissions to ~/.runelite and that there is sufficient disk space.");
+
         return 1;
     }
     std::string java = "java";
@@ -154,8 +183,8 @@ int main(int argc, char* argv[]) {
         close(STDIN_FILENO);
 
         setenv("JX_SESSION_ID", session.session_id.c_str(), 1);
-        setenv("JX_CHARACTER_ID", selected_account.accountId.c_str(), 1);
-        setenv("JX_DISPLAY_NAME", selected_account.displayName.c_str(), 1);
+        setenv("JX_CHARACTER_ID", selected_account->accountId.c_str(), 1);
+        setenv("JX_DISPLAY_NAME", selected_account->displayName.c_str(), 1);
 
         prctl(PR_SET_DUMPABLE, 0);
 
@@ -167,8 +196,8 @@ int main(int argc, char* argv[]) {
         exec_args.push_back(const_cast<char*>(jar_flag_str.c_str()));
         exec_args.push_back(const_cast<char*>(jar_path.c_str()));
 
-        for (char* arg : rl_args) {
-            exec_args.push_back(arg);
+        for (const std::string& rl_flag : rl_flags) {
+            exec_args.push_back(const_cast<char*>(rl_flag.c_str()));
         }
         exec_args.push_back(nullptr);
 
@@ -179,7 +208,6 @@ int main(int argc, char* argv[]) {
         _exit(1);
     }
 
-    // 5. Parent: wipe sensitive data from own memory
     explicit_bzero(session.session_id.data(), session.session_id.size());
     explicit_bzero(session.tokens.refresh_token.data(), session.tokens.refresh_token.size());
     explicit_bzero(session.tokens.id_token.data(), session.tokens.id_token.size());

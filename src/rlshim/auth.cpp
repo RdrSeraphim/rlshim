@@ -151,7 +151,7 @@ namespace auth {
         return parse::base64_url_encode(hash_vec);
     }
 
-    std::optional<std::string> get_consent_id_token(const std::string& first_id_token, bool use_gui) {
+    std::optional<std::string> get_consent_id_token(const std::string& first_id_token, bool dont_use_gui) {
         std::string nonce = generate_random_string(32);
         std::string state = generate_random_string(32);
 
@@ -190,12 +190,12 @@ namespace auth {
         std::string url_placeholder = "http://localhost/#code=...";
 
         std::optional<std::string> pasted_url_opt;
-        if (use_gui) {
-            pasted_url_opt = gui::prompt_for_url("rlshim - initial login 2 electric boogaloo", instructions,
-                                                 instructions_pt_2, url, url_placeholder);
-        } else {
+        if (dont_use_gui) {
             pasted_url_opt =
                 cli::prompt_for_url("initial login 2 electric boogaloo", instructions, url, url_placeholder);
+        } else {
+            pasted_url_opt = gui::prompt_for_url("rlshim - initial login 2 electric boogaloo", instructions,
+                                                 instructions_pt_2, url, url_placeholder);
         }
 
         if (!pasted_url_opt) {
@@ -305,7 +305,7 @@ namespace auth {
         }
     }
 
-    std::optional<auth_session> do_interactive_login(bool use_gui) {
+    std::optional<auth_session> do_interactive_login(bool dont_use_gui) {
         std::string client_id = "com_jagex_auth_desktop_launcher";
         std::string redirect_uri = "https://secure.runescape.com/m=weblogin/launcher-redirect";
         std::string code_verifier = generate_random_string(64);
@@ -346,11 +346,11 @@ namespace auth {
         std::string url_placeholder = "https://secure.runescape.com/m=weblogin/launcher-redirect?code=...";
 
         std::optional<std::string> pasted_url_opt;
-        if (use_gui) {
+        if (dont_use_gui) {
+            pasted_url_opt = cli::prompt_for_url("rlshim - initial login", instructions, auth_url, url_placeholder);
+        } else {
             pasted_url_opt = gui::prompt_for_url("rlshim - initial login", instructions, instructions_pt_2, auth_url,
                                                  url_placeholder);
-        } else {
-            pasted_url_opt = cli::prompt_for_url("rlshim - initial login", instructions, auth_url, url_placeholder);
         }
 
         if (!pasted_url_opt) {
@@ -405,7 +405,7 @@ namespace auth {
             creds.tokens.id_token = auth_json["id_token"].get<std::string>();
             creds.tokens.refresh_token = auth_json["refresh_token"].get<std::string>();
 
-            auto consent_id_token_opt = get_consent_id_token(creds.tokens.id_token, use_gui);
+            auto consent_id_token_opt = get_consent_id_token(creds.tokens.id_token, dont_use_gui);
             if (!consent_id_token_opt) {
                 logger::error("failed to get consent id_token");
                 return std::nullopt;

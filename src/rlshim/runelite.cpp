@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
 #include <memory>
 #include <string>
 
@@ -32,6 +33,13 @@ namespace runelite {
         if (dir.empty())
             return {};
         return dir + "/runelite.jar";
+    }
+
+    std::string characters_path() {
+        std::string dir = runelite_dir();
+        if (dir.empty())
+            return {};
+        return dir + "/rlshim_char";
     }
 
     namespace {
@@ -135,6 +143,44 @@ namespace runelite {
             return out;
         }
     }  // namespace
+
+    std::string read_saved_character() {
+        std::string path = characters_path();
+        if (path.empty()) {
+            logger::error("$HOME is not set; cannot locate ~/.runelite");
+            return {};
+        }
+
+        std::ifstream file(path);
+        if (!file)
+            return {};
+
+        std::string name;
+        std::getline(file, name);
+        return name;
+    }
+
+    bool save_character(const std::string& display_name) {
+        std::string path = characters_path();
+        if (path.empty()) {
+            logger::error("$HOME is not set; cannot locate ~/.runelite");
+            return false;
+        }
+
+        std::ofstream file(path, std::ios::trunc);
+        if (!file) {
+            logger::error("failed to open {} for writing", path);
+            return false;
+        }
+
+        file << display_name << '\n';
+        if (!file) {
+            logger::error("failed to save character to {}", path);
+            return false;
+        }
+
+        return true;
+    }
 
     bool establish_jar() {
         std::string path = jar_path();

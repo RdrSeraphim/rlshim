@@ -64,3 +64,4 @@ target/
 .flatpak-builder
 packaging/flatpak/repo
 .claude/
+imgui.ini
