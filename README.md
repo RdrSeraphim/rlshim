@@ -49,8 +49,6 @@ sudo apt install ./rlshim-*.deb
 
 ### Arch Linux (AUR)
 
-Well, once the [supply chain attack](https://archlinux.org/news/active-aur-malicious-packages-incident/) stops and I can register an account. In the meantime, you can fetch the PKGBUILDs (zipped as `aur_pkgbuilds.zip`) from the [Releases page](https://github.com/RdrSeraphim/rlshim/releases) and build it yourself with `makepkg -si`.
-
 For the stable binary release:  
 
 ```bash
