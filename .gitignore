@@ -66,3 +66,4 @@ packaging/flatpak/repo
 .claude/
 imgui.ini
 .aur/
+repo/

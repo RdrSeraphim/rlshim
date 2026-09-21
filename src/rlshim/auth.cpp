@@ -8,7 +8,12 @@
 #include <curl/curl.h>
 #include <libsecret/secret.h>
 #include <cstddef>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <nlohmann/json.hpp>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <openssl/evp.h>
 #include <openssl/rand.h>
@@ -424,20 +429,266 @@ namespace auth {
         }
     }
 
-    namespace keyring {
+    namespace vault {
+        static const char MAGIC[8] = {'R', 'L', 'V', 'A', 'U', 'L', 'T', '1'};
+        constexpr size_t IV_LEN = 12;
+        constexpr size_t TAG_LEN = 16;
+        constexpr size_t KEY_LEN = 32;
 
-        bool is_available() {
+        static std::string get_vault_path() {
+            const char* home = std::getenv("HOME");
+            if (!home || *home == '\0') {
+                return {};
+            }
+            std::filesystem::path dir = std::filesystem::path(home) / ".runelite";
+            std::error_code ec;
+            std::filesystem::create_directories(dir, ec);
+            return (dir / "rlshim_vault.enc").string();
+        }
+
+        static std::string get_machine_entropy() {
+            std::string id;
+            std::ifstream file("/etc/machine-id");
+            if (!file.is_open()) {
+                file.open("/var/lib/dbus/machine-id");
+            }
+            if (file.is_open()) {
+                file >> id;
+            }
+            if (id.empty()) {
+                const char* hostname = std::getenv("HOSTNAME");
+                id = hostname ? hostname : "rlshim-default-machine-seed";
+            }
+            uid_t uid = getuid();
+            return id + ":" + std::to_string(uid);
+        }
+
+        static bool derive_key(unsigned char* key_out, size_t key_len) {
+            std::string entropy = get_machine_entropy();
+            static const unsigned char salt[] = "life.srp.rlshim:vault:v1";
+            int res = PKCS5_PBKDF2_HMAC(
+                entropy.c_str(), static_cast<int>(entropy.length()),
+                salt, static_cast<int>(sizeof(salt) - 1),
+                50000,
+                EVP_sha256(),
+                static_cast<int>(key_len), key_out);
+            return res == 1;
+        }
+
+        static bool encrypt_data(const std::string& plaintext, std::vector<unsigned char>& out_data) {
+            unsigned char key[KEY_LEN];
+            if (!derive_key(key, KEY_LEN)) {
+                return false;
+            }
+
+            unsigned char iv[IV_LEN];
+            if (RAND_bytes(iv, static_cast<int>(IV_LEN)) != 1) {
+                return false;
+            }
+
+            EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+            if (!ctx) return false;
+
+            if (EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) != 1 ||
+                EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, static_cast<int>(IV_LEN), nullptr) != 1 ||
+                EVP_EncryptInit_ex(ctx, nullptr, nullptr, key, iv) != 1) {
+                EVP_CIPHER_CTX_free(ctx);
+                return false;
+            }
+
+            std::vector<unsigned char> ciphertext(plaintext.size() + 16);
+            int out_len1 = 0;
+            if (EVP_EncryptUpdate(ctx, ciphertext.data(), &out_len1,
+                                   reinterpret_cast<const unsigned char*>(plaintext.data()),
+                                   static_cast<int>(plaintext.size())) != 1) {
+                EVP_CIPHER_CTX_free(ctx);
+                return false;
+            }
+
+            int out_len2 = 0;
+            if (EVP_EncryptFinal_ex(ctx, ciphertext.data() + out_len1, &out_len2) != 1) {
+                EVP_CIPHER_CTX_free(ctx);
+                return false;
+            }
+
+            unsigned char tag[TAG_LEN];
+            if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, static_cast<int>(TAG_LEN), tag) != 1) {
+                EVP_CIPHER_CTX_free(ctx);
+                return false;
+            }
+
+            EVP_CIPHER_CTX_free(ctx);
+
+            size_t total_cipher_len = static_cast<size_t>(out_len1 + out_len2);
+
+            out_data.clear();
+            out_data.reserve(sizeof(MAGIC) + IV_LEN + TAG_LEN + total_cipher_len);
+            out_data.insert(out_data.end(), MAGIC, MAGIC + sizeof(MAGIC));
+            out_data.insert(out_data.end(), iv, iv + IV_LEN);
+            out_data.insert(out_data.end(), tag, tag + TAG_LEN);
+            out_data.insert(out_data.end(), ciphertext.begin(), ciphertext.begin() + total_cipher_len);
+
+            return true;
+        }
+
+        static bool decrypt_data(const std::vector<unsigned char>& in_data, std::string& out_plaintext) {
+            if (in_data.size() < sizeof(MAGIC) + IV_LEN + TAG_LEN) {
+                return false;
+            }
+
+            if (std::memcmp(in_data.data(), MAGIC, sizeof(MAGIC)) != 0) {
+                return false;
+            }
+
+            const unsigned char* iv = in_data.data() + sizeof(MAGIC);
+            const unsigned char* tag = iv + IV_LEN;
+            const unsigned char* ciphertext = tag + TAG_LEN;
+            size_t cipher_len = in_data.size() - (sizeof(MAGIC) + IV_LEN + TAG_LEN);
+
+            unsigned char key[KEY_LEN];
+            if (!derive_key(key, KEY_LEN)) {
+                return false;
+            }
+
+            EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+            if (!ctx) return false;
+
+            if (EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) != 1 ||
+                EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, static_cast<int>(IV_LEN), nullptr) != 1 ||
+                EVP_DecryptInit_ex(ctx, nullptr, nullptr, key, iv) != 1) {
+                EVP_CIPHER_CTX_free(ctx);
+                return false;
+            }
+
+            std::vector<unsigned char> plaintext(cipher_len + 16);
+            int out_len1 = 0;
+            if (EVP_DecryptUpdate(ctx, plaintext.data(), &out_len1, ciphertext, static_cast<int>(cipher_len)) != 1) {
+                EVP_CIPHER_CTX_free(ctx);
+                return false;
+            }
+
+            if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, static_cast<int>(TAG_LEN),
+                                   const_cast<unsigned char*>(tag)) != 1) {
+                EVP_CIPHER_CTX_free(ctx);
+                return false;
+            }
+
+            int out_len2 = 0;
+            int ret = EVP_DecryptFinal_ex(ctx, plaintext.data() + out_len1, &out_len2);
+            EVP_CIPHER_CTX_free(ctx);
+
+            if (ret <= 0) {
+                return false;
+            }
+
+            out_plaintext.assign(reinterpret_cast<char*>(plaintext.data()), static_cast<size_t>(out_len1 + out_len2));
+            return true;
+        }
+
+        static std::optional<nlohmann::json> load_vault_json() {
+            std::string path = get_vault_path();
+            if (path.empty() || !std::filesystem::exists(path)) {
+                return std::nullopt;
+            }
+
+            std::ifstream file(path, std::ios::binary);
+            if (!file.is_open()) {
+                return std::nullopt;
+            }
+
+            std::vector<unsigned char> data((std::istreambuf_iterator<char>(file)),
+                                             std::istreambuf_iterator<char>());
+            file.close();
+
+            std::string plaintext;
+            if (!decrypt_data(data, plaintext)) {
+                logger::error("failed to decrypt credentials vault");
+                return std::nullopt;
+            }
+
+            try {
+                return nlohmann::json::parse(plaintext);
+            } catch (const std::exception& e) {
+                logger::error("failed to parse decrypted vault JSON: {}", e.what());
+                return std::nullopt;
+            }
+        }
+
+        static bool save_vault_json(const nlohmann::json& j) {
+            std::string path = get_vault_path();
+            if (path.empty()) return false;
+
+            std::string plaintext = j.dump();
+            std::vector<unsigned char> encrypted;
+            if (!encrypt_data(plaintext, encrypted)) {
+                logger::error("failed to encrypt credentials vault");
+                return false;
+            }
+
+            std::ofstream file(path, std::ios::binary | std::ios::trunc);
+            if (!file.is_open()) {
+                logger::error("failed to open vault file for writing: {}", path);
+                return false;
+            }
+
+            file.write(reinterpret_cast<const char*>(encrypted.data()), encrypted.size());
+            file.close();
+
+            chmod(path.c_str(), S_IRUSR | S_IWUSR);  // 0600: read/write by owner only
+            return true;
+        }
+
+        static bool store(const std::string& key, const std::string& value) {
+            auto opt = load_vault_json();
+            nlohmann::json j = opt.value_or(nlohmann::json::object());
+            j[key] = value;
+            return save_vault_json(j);
+        }
+
+        static std::optional<std::string> lookup(const std::string& key) {
+            auto opt = load_vault_json();
+            if (!opt || !opt->contains(key)) {
+                return std::nullopt;
+            }
+            return (*opt)[key].get<std::string>();
+        }
+
+        static bool clear(const std::string& key) {
+            auto opt = load_vault_json();
+            if (!opt) return true;
+            nlohmann::json j = *opt;
+            j.erase(key);
+            if (j.empty()) {
+                std::string path = get_vault_path();
+                std::error_code ec;
+                std::filesystem::remove(path, ec);
+                return true;
+            }
+            return save_vault_json(j);
+        }
+    }  // namespace vault
+
+    namespace keyring {
+        enum class Backend {
+            UNKNOWN,
+            LIBSECRET,
+            ENCRYPTED_FILE
+        };
+
+        static Backend s_backend = Backend::UNKNOWN;
+
+        static bool try_libsecret(bool silent = false) {
             GError* error = nullptr;
             SecretService* service = secret_service_get_sync(SECRET_SERVICE_LOAD_COLLECTIONS, nullptr, &error);
 
             if (error != nullptr) {
-                logger::error("secret service not available: {}", error->message);
+                if (!silent) logger::error("secret service not available: {}", error->message);
                 g_error_free(error);
                 return false;
             }
 
             if (service == nullptr) {
-                logger::error("no secret service provider found on D-Bus");
+                if (!silent) logger::error("no secret service provider found on D-Bus");
                 return false;
             }
 
@@ -445,14 +696,14 @@ namespace auth {
                                                                             SECRET_COLLECTION_NONE, nullptr, &error);
 
             if (error != nullptr) {
-                logger::error("failed to access default keyring collection: {}", error->message);
+                if (!silent) logger::error("failed to access default keyring collection: {}", error->message);
                 g_error_free(error);
                 g_object_unref(service);
                 return false;
             }
 
             if (collection == nullptr) {
-                logger::error("no default keyring collection found. is your keyring set up?");
+                if (!silent) logger::error("no default keyring collection found. is your keyring set up?");
                 g_object_unref(service);
                 return false;
             }
@@ -460,7 +711,7 @@ namespace auth {
             bool locked = secret_collection_get_locked(collection);
 
             if (locked) {
-                logger::info("default keyring collection is locked, attempting to unlock...");
+                if (!silent) logger::info("default keyring collection is locked, attempting to unlock...");
 
                 GList* to_unlock = g_list_append(nullptr, collection);
                 GList* unlocked = nullptr;
@@ -469,7 +720,7 @@ namespace auth {
                 g_list_free(to_unlock);
 
                 if (error != nullptr) {
-                    logger::error("failed to unlock keyring: {}", error->message);
+                    if (!silent) logger::error("failed to unlock keyring: {}", error->message);
                     g_error_free(error);
                     g_object_unref(collection);
                     g_object_unref(service);
@@ -480,19 +731,42 @@ namespace auth {
                 g_list_free(unlocked);
 
                 if (!was_unlocked) {
-                    logger::error("keyring unlock was dismissed or failed");
+                    if (!silent) logger::error("keyring unlock was dismissed or failed");
                     g_object_unref(collection);
                     g_object_unref(service);
                     return false;
                 }
 
-                logger::info("keyring unlocked successfully");
+                if (!silent) logger::info("keyring unlocked successfully");
             }
 
             g_object_unref(collection);
             g_object_unref(service);
 
             return true;
+        }
+
+        bool is_available() {
+            if (s_backend == Backend::LIBSECRET) {
+                return true;
+            }
+            if (s_backend == Backend::ENCRYPTED_FILE) {
+                return true;
+            }
+
+            if (try_libsecret(true)) {
+                s_backend = Backend::LIBSECRET;
+                return true;
+            }
+
+            std::string vp = vault::get_vault_path();
+            if (!vp.empty()) {
+                logger::info("system keyring not available; using machine-encrypted credential vault ✔");
+                s_backend = Backend::ENCRYPTED_FILE;
+                return true;
+            }
+
+            return false;
         }
 
         const SecretSchema* get_schema() {
@@ -505,33 +779,45 @@ namespace auth {
         }
 
         bool store(const std::string& key, const std::string& value) {
-            GError* error = nullptr;
+            if (s_backend == Backend::ENCRYPTED_FILE) {
+                return vault::store(key, value);
+            }
 
+            // libsecret path
+            GError* error = nullptr;
             secret_password_store_sync(get_schema(), SECRET_COLLECTION_DEFAULT, "rlshim credentials", value.c_str(),
                                        nullptr, &error, "account", key.c_str(), nullptr);
 
             if (error != nullptr) {
-                logger::error("failed to store secret: {}", error->message);
+                logger::error("failed to store secret in keyring: {}", error->message);
                 g_error_free(error);
                 return false;
             }
+
+            // Also mirror to encrypted vault as a backup for Game Mode / headless sessions
+            vault::store(key, value);
 
             return true;
         }
 
         std::optional<std::string> lookup(const std::string& key) {
-            GError* error = nullptr;
+            if (s_backend == Backend::ENCRYPTED_FILE) {
+                return vault::lookup(key);
+            }
 
+            // libsecret path
+            GError* error = nullptr;
             gchar* value = secret_password_lookup_sync(get_schema(), nullptr, &error, "account", key.c_str(), nullptr);
 
             if (error != nullptr) {
-                logger::error("failed to lookup secret: {}", error->message);
+                logger::error("failed to lookup secret from keyring: {}", error->message);
                 g_error_free(error);
-                return std::nullopt;
+                return vault::lookup(key);
             }
 
             if (value == nullptr) {
-                return std::nullopt;
+                // Not found in libsecret; check if encrypted vault has it (e.g. created in Game Mode)
+                return vault::lookup(key);
             }
 
             std::string str(value);
@@ -540,17 +826,18 @@ namespace auth {
         }
 
         bool clear(const std::string& key) {
-            GError* error = nullptr;
-
-            secret_password_clear_sync(get_schema(), nullptr, &error, "account", key.c_str(), nullptr);
-
-            if (error != nullptr) {
-                logger::error("failed to clear secret: {}", error->message);
-                g_error_free(error);
-                return false;
+            bool ok = true;
+            if (s_backend == Backend::LIBSECRET) {
+                GError* error = nullptr;
+                secret_password_clear_sync(get_schema(), nullptr, &error, "account", key.c_str(), nullptr);
+                if (error != nullptr) {
+                    logger::error("failed to clear secret from keyring: {}", error->message);
+                    g_error_free(error);
+                    ok = false;
+                }
             }
-
-            return true;
+            vault::clear(key);
+            return ok;
         }
     }  // namespace keyring
 }  // namespace auth
