@@ -14,7 +14,7 @@ A lightweight, native shim for launching RuneLite on Linux with Jagex Accounts.
 You might wish to view `rlshim` like a very simplified [Bolt](https://codeberg.org/Adamcake/Bolt). There's no RS3 support (nor do I plan on it), there's no custom launch command options (beyond passing flags to RuneLite), or custom RuneLite jar support (sorta, you can replace `~/.runelite/RuneLite.jar` with whatever you want). However, compared to Bolt, `rlshim` offers:
 
 - A native launcher for RuneLite that doesn't depend on the Chromium Embedded Framework. `rlshim` (including assets) weighs <32mb compared to Bolt's ~318mb installation.<sup><a href="#fn-1">[1]</a></sup>
-- A more secure handling of credentials by using `libsecret` (i.e. gnome-keyring, kwallet, keepassxc, pass-secret-service, etc.) to store Jagex Account credentials encrypted and using syscalls to prevent process memory from leaking creds when it gets pulled out of storage. No plaintext local file storage here.
+- A more secure handling of credentials by using `libsecret` (i.e. gnome-keyring, kwallet, keepassxc, pass-secret-service, etc.) to store Jagex Account credentials encrypted and using syscalls to prevent process memory from leaking creds when it gets pulled out of storage. In the event that `libsecret` isn't available, a local file store encrypted with AES-256-GCM is used.
 - A non-obtrusive flow. The only time you'll see an interface is if it's your first time logging in, or you have to select a character (since Jagex Accounts support up to 20 linked).
 
 When `rlshim` is installed, a desktop entry for RuneLite gets made. Running it runs `rlshim`, handling credentials and ensures RuneLite is available and Java exists to run it, then runs it. That's it.
