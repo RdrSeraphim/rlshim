@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0](https://github.com/RdrSeraphim/rlshim/compare/v1.4.0..v1.5.0) - 2026-10-29
+
+### 🚀 Features
+
+- Port to rust, various steam deck fixes ([9c68271](https://github.com/RdrSeraphim/rlshim/-/commit/9c68271cf0d9701e9a36fbb2dec3ad317862d906))
+
+## [1.4.0](https://github.com/RdrSeraphim/rlshim/compare/v1.3.0..v1.4.0) - 2026-09-21
+
+### 🚀 Features
+
+- Add encrypted credentials vault for fallback ([f9e9743](https://github.com/RdrSeraphim/rlshim/-/commit/f9e9743a645c0d6a5051398faf36e323e7273b9d))
+
 ## [1.3.0](https://github.com/RdrSeraphim/rlshim/compare/v1.2.1..v1.3.0) - 2026-07-17
 
 ### 🚀 Features
