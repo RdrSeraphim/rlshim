@@ -39,12 +39,20 @@ jobs:
         if: matrix.libc == 'glibc'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang build-essential cmake pkg-config libsecret-1-dev libssl-dev libglfw3-dev libgl1-mesa-dev rpm libcurl4-openssl-dev libx11-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
+          sudo apt-get install -y build-essential pkg-config libsecret-1-dev curl rpm zip
+
+      - name: Install Rust toolchain (glibc)
+        if: matrix.libc == 'glibc'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo build (glibc)
+        if: matrix.libc == 'glibc'
+        uses: Swatinem/rust-cache@v2
 
       - name: Build Packages (glibc)
         if: matrix.libc == 'glibc'
         run: |
-          CXX=clang++ CC=clang make package
+          make package
 
       # ----- MUSL BUILDS (Docker Alpine) -----
       - name: Build Packages (musl)
@@ -53,8 +61,8 @@ jobs:
           # Use Docker to spin up an Alpine container natively on the host architecture
           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest /bin/sh -c "\
             apk update && \
-            apk add clang make cmake pkgconf libsecret-dev openssl-dev glfw-dev mesa-dev g++ curl-dev git libx11-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev && \
-            CXX=clang++ CC=clang make tar"
+            apk add build-base make pkgconf libsecret-dev curl tar git rust cargo && \
+            RUSTFLAGS='-C target-feature=-crt-static' make tar"
 
       # ----- UPLOAD -----
       - name: Zip AUR PKGBUILDs

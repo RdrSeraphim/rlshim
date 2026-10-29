@@ -1,5 +1,5 @@
 Name:           rlshim
-Version:        1.3.0
+Version:        1.5.0
 Release:        1%{?dist}
 Summary:        A lightweight, native Linux launcher for RuneLite.
 
@@ -7,25 +7,15 @@ License:        BSD-2-Clause
 URL:            https://github.com/RdrSeraphim/rlshim
 Source0:        https://github.com/RdrSeraphim/rlshim/archive/refs/tags/v%{version}.tar.gz
 
-BuildRequires:  cmake
-BuildRequires:  clang
+BuildRequires:  cargo
+BuildRequires:  rust
+BuildRequires:  gcc-c++
 BuildRequires:  make
 BuildRequires:  pkgconf-pkg-config
 BuildRequires:  libsecret-devel
-BuildRequires:  openssl-devel
-BuildRequires:  glfw-devel
-BuildRequires:  mesa-libGL-devel
-BuildRequires:  libcurl-devel
-BuildRequires:  libX11-devel
-BuildRequires:  libXcursor-devel
-BuildRequires:  libXi-devel
-BuildRequires:  libXinerama-devel
-BuildRequires:  libXrandr-devel
-BuildRequires:  git
+BuildRequires:  curl
 
 Requires:       libsecret
-Requires:       openssl
-Requires:       glfw
 Requires:       glibc
 # RuneLite needs a JRE (11+); rlshim can't launch it otherwise, so pull one in.
 Requires:       java >= 1:11
@@ -37,13 +27,10 @@ rlshim is a lightweight, native Linux launcher for RuneLite, designed as an alte
 %autosetup -n rlshim-%{version}
 
 %build
-export CC=clang
-export CXX=clang++
-%cmake -DCMAKE_BUILD_TYPE=Release
-%cmake_build
+cargo build --release --locked
 
 %install
-%cmake_install
+DESTDIR=%{buildroot} PREFIX=%{_prefix} make install
 
 %files
 %license LICENSE
@@ -57,6 +44,10 @@ export CXX=clang++
 %{_datadir}/rlshim/data/*.ttf
 
 %changelog
+* Wed Oct 28 2026 Seraphim Pardee <me@srp.life> - 1.5.0-1
+- Port to rust, various Steam Deck bug fixes.
+* Mon Sep 21 2026 Seraphim Pardee <me@srp.life> - 1.4.0-1
+- add encrypted credentials vault for fallback
 * Thu Jul 16 2026 Seraphim Pardee <me@srp.life> - 1.3.0-1
 - Save preferred character for multi-char accounts, proper cli parsing
 * Wed Jul 15 2026 Seraphim Pardee <me@srp.life> - 1.2.1-1

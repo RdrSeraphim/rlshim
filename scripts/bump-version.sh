@@ -2,12 +2,13 @@
 #
 # bump-version.sh — keep rlshim's version number in sync across the tree.
 #
-# The build's source of truth is the project() version in CMakeLists.txt; the
-# AUR PKGBUILDs pick it up automatically via configure_file(@PROJECT_VERSION@).
+# The build's source of truth is the [package] version in Cargo.toml; the
+# binary picks it up via env!("CARGO_PKG_VERSION") and the AUR PKGBUILDs pick it
+# up via Makefile's @PROJECT_VERSION@ substitution.
 # The remaining places carry hand-copied literals that must be kept in lockstep:
 #
-#   - CMakeLists.txt                                project(rlshim VERSION ...)
-#   - src/main.cpp                                  RLSHIM_VERSION fallback #define
+#   - Cargo.toml                                    [package] version = "..."
+#   - flake.nix                                     version = "..."
 #   - packaging/fedora/rlshim.spec                  Version: + %changelog entry
 #   - packaging/opensuse/rlshim.spec                Version: + %changelog entry
 #   - packaging/flatpak/life.srp.rlshim.metainfo.xml   <release> entry
@@ -28,8 +29,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 ROOT="$(cd -- "${SCRIPT_DIR}/.." &>/dev/null && pwd)"
 
-CMAKE="${ROOT}/CMakeLists.txt"
-MAIN="${ROOT}/src/main.cpp"
+CARGO_TOML="${ROOT}/Cargo.toml"
+CARGO_LOCK="${ROOT}/Cargo.lock"
+FLAKE_NIX="${ROOT}/flake.nix"
 FEDORA_SPEC="${ROOT}/packaging/fedora/rlshim.spec"
 OPENSUSE_SPEC="${ROOT}/packaging/opensuse/rlshim.spec"
 FLATPAK_META="${ROOT}/packaging/flatpak/life.srp.rlshim.metainfo.xml"
@@ -45,7 +47,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         -m|--message) MESSAGE="${2:-}"; shift 2 ;;
         --tag)        DO_TAG=1; shift ;;
-        -h|--help)    sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help)    sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         -*)           die "unknown option: $1" ;;
         *)            [[ -z "$BUMP" ]] || die "unexpected argument: $1"; BUMP="$1"; shift ;;
     esac
@@ -53,11 +55,10 @@ done
 
 [[ -n "$BUMP" ]] || die "missing version argument (a version like 1.3.0, or major|minor|patch)"
 
-# --- read current version from CMakeLists (the source of truth) -------------
-CURRENT="$(grep -oE 'project\(rlshim VERSION [0-9]+\.[0-9]+\.[0-9]+' "$CMAKE" \
-    | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')" \
-    || die "could not read current version from CMakeLists.txt"
-[[ -n "$CURRENT" ]] || die "could not read current version from CMakeLists.txt"
+# --- read current version from Cargo.toml (the source of truth) -------------
+CURRENT="$(sed -n 's/^version = "\([0-9]\+\.[0-9]\+\.[0-9]\+\)"/\1/p' "$CARGO_TOML" | head -n 1)" \
+    || die "could not read current version from Cargo.toml"
+[[ -n "$CURRENT" ]] || die "could not read current version from Cargo.toml"
 
 IFS='.' read -r CUR_MAJOR CUR_MINOR CUR_PATCH <<< "$CURRENT"
 
@@ -77,23 +78,37 @@ esac
 echo "Bumping ${CURRENT} -> ${NEW}"
 
 # --- rewrite the plain literals ---------------------------------------------
-# CMakeLists: only the project() line, so we don't touch dependency versions.
-sed -i -E "s/(project\(rlshim VERSION )${CURRENT//./\\.}/\1${NEW}/" "$CMAKE"
-echo "  CMakeLists.txt          project() version"
+# Cargo.toml: only the top-level [package] version line.
+sed -i -E "0,/^version = \"${CURRENT//./\\.}\"$/s//version = \"${NEW}\"/" "$CARGO_TOML"
+echo "  Cargo.toml              [package] version"
 
-# main.cpp: the RLSHIM_VERSION fallback #define.
-sed -i -E "s/(#define RLSHIM_VERSION \")${CURRENT//./\\.}(\")/\1${NEW}\2/" "$MAIN"
-echo "  src/main.cpp            RLSHIM_VERSION fallback"
+# Cargo.lock: update root rlshim package entry if present.
+if [[ -f "$CARGO_LOCK" ]]; then
+    awk -v ver="$NEW" '
+        /^name = "rlshim"$/ { in_rlshim = 1; print; next }
+        in_rlshim && /^version = "/ {
+            printf "version = \"%s\"\n", ver
+            in_rlshim = 0
+            next
+        }
+        { print }
+    ' "$CARGO_LOCK" > "${CARGO_LOCK}.tmp" && mv "${CARGO_LOCK}.tmp" "$CARGO_LOCK"
+    echo "  Cargo.lock              rlshim version"
+fi
+
+# flake.nix: update version attribute.
+sed -i -E "s/(version = \")[0-9]+\.[0-9]+\.[0-9]+(\";)/\1${NEW}\2/" "$FLAKE_NIX"
+echo "  flake.nix               version"
 
 # rpm specs: the "Version:" field (leading-anchored so changelog lines survive).
-sed -i -E "s/^(Version:[[:space:]]+)${CURRENT//./\\.}$/\1${NEW}/" "$FEDORA_SPEC"
-sed -i -E "s/^(Version:[[:space:]]+)${CURRENT//./\\.}$/\1${NEW}/" "$OPENSUSE_SPEC"
+sed -i -E "s/^(Version:[[:space:]]+)[0-9]+\.[0-9]+\.[0-9]+$/\1${NEW}/" "$FEDORA_SPEC"
+sed -i -E "s/^(Version:[[:space:]]+)[0-9]+\.[0-9]+\.[0-9]+$/\1${NEW}/" "$OPENSUSE_SPEC"
 echo "  fedora/rlshim.spec      Version:"
 echo "  opensuse/rlshim.spec    Version:"
 
 # --- verify no stale literals remain in the Version fields ------------------
-grep -q "project(rlshim VERSION ${NEW}" "$CMAKE"          || die "CMakeLists.txt version not updated"
-grep -q "#define RLSHIM_VERSION \"${NEW}\"" "$MAIN"        || die "main.cpp version not updated"
+grep -q "^version = \"${NEW}\"$" "$CARGO_TOML"             || die "Cargo.toml version not updated"
+grep -q "version = \"${NEW}\";" "$FLAKE_NIX"               || die "flake.nix version not updated"
 grep -qE "^Version:[[:space:]]+${NEW}$" "$FEDORA_SPEC"     || die "fedora spec version not updated"
 grep -qE "^Version:[[:space:]]+${NEW}$" "$OPENSUSE_SPEC"   || die "opensuse spec version not updated"
 
@@ -144,12 +159,9 @@ else
 fi
 
 # --- optional commit + git tag ----------------------------------------------
-# A tag must point at the commit that *contains* the bump, so --tag commits the
-# edited files first and tags that commit. Tagging without committing would put
-# the tag on the previous (un-bumped) commit, one behind the actual release.
 if [[ "$DO_TAG" -eq 1 ]]; then
     git -C "$ROOT" add -- \
-        "$CMAKE" "$MAIN" "$FEDORA_SPEC" "$OPENSUSE_SPEC" "$FLATPAK_META" "CHANGELOG.md"
+        "$CARGO_TOML" "$CARGO_LOCK" "$FLAKE_NIX" "$FEDORA_SPEC" "$OPENSUSE_SPEC" "$FLATPAK_META" "CHANGELOG.md"
     git -C "$ROOT" commit -q -m "chore: bump version to ${NEW}"
     echo "  git commit              chore: bump version to ${NEW}"
     git -C "$ROOT" tag -a "v${NEW}" -m "rlshim v${NEW}"

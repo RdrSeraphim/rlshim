@@ -13,8 +13,8 @@ A lightweight, native shim for launching RuneLite on Linux with Jagex Accounts.
 
 You might wish to view `rlshim` like a very simplified [Bolt](https://codeberg.org/Adamcake/Bolt). There's no RS3 support (nor do I plan on it), there's no custom launch command options (beyond passing flags to RuneLite), or custom RuneLite jar support (sorta, you can replace `~/.runelite/RuneLite.jar` with whatever you want). However, compared to Bolt, `rlshim` offers:
 
-- A native launcher for RuneLite that doesn't depend on the Chromium Embedded Framework. `rlshim` (including assets) weighs <32mb compared to Bolt's ~318mb installation.<sup><a href="#fn-1">[1]</a></sup>
-- A more secure handling of credentials by using `libsecret` (i.e. gnome-keyring, kwallet, keepassxc, pass-secret-service, etc.) to store Jagex Account credentials encrypted and using syscalls to prevent process memory from leaking creds when it gets pulled out of storage. No plaintext local file storage here.
+- A native launcher for RuneLite that doesn't depend on the Chromium Embedded Framework. `rlshim` (including assets) weighs <16mb compared to Bolt's ~318mb installation.<sup><a href="#fn-1">[1]</a></sup>
+- A more secure handling of credentials by using `libsecret` (i.e. gnome-keyring, kwallet, keepassxc, pass-secret-service, etc.) to store Jagex Account credentials encrypted and using syscalls to prevent process memory from leaking creds when it gets pulled out of storage. In the event that `libsecret` isn't available (or on handheld gaming distros like SteamOS), a local file store encrypted with AES-256-GCM is used.
 - A non-obtrusive flow. The only time you'll see an interface is if it's your first time logging in, or you have to select a character (since Jagex Accounts support up to 20 linked).
 
 When `rlshim` is installed, a desktop entry for RuneLite gets made. Running it runs `rlshim`, handling credentials and ensures RuneLite is available and Java exists to run it, then runs it. That's it.
@@ -112,24 +112,24 @@ environment.systemPackages = [
 
 ### 1. Install Dependencies
 
-You will need a modern C++ compiler (supporting C++23), CMake, and a few development headers for the GUI and Keyring. Depending on your Linux distribution, install the following packages:
+You will need a Rust toolchain (`cargo` and `rustc`), `pkg-config`, `curl`, and the `libsecret` development headers. Depending on your Linux distribution, install the following packages:
 
 **Debian / Ubuntu:**
 
 ```bash
-sudo apt install clang build-essential cmake pkg-config libsecret-1-dev libssl-dev libglfw3-dev libgl1-mesa-dev libcurl4-openssl-dev libx11-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
+sudo apt install cargo rustc build-essential pkg-config libsecret-1-dev curl
 ```
 
 **Fedora / RHEL:**
 
 ```bash
-sudo dnf install clang @development-tools cmake pkgconf libsecret-devel openssl-devel glfw-devel mesa-libGL-devel libcurl-devel libX11-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel git
+sudo dnf install cargo rust make gcc-c++ pkgconf-pkg-config libsecret-devel curl
 ```
 
 **Arch Linux:**
 
 ```bash
-sudo pacman -S clang base-devel cmake pkgconf libsecret openssl curl libx11 libxcursor libxi libxinerama libxrandr git glfw-wayland # (or glfw-x11)
+sudo pacman -S rust base-devel pkgconf libsecret curl
 ```
 
 ### 2. Compile
@@ -143,6 +143,9 @@ make
 # Build the debug version (with debugging symbols)
 make debug
 
+# Run unit tests
+make test
+
 # Build release packages (.deb, .rpm, .tar.gz)
 make package
 
@@ -155,7 +158,7 @@ sudo make install
 # Uninstall from system directories (removes bin, desktop entries, and assets)
 sudo make uninstall
 
-# Clean the build directory
+# Clean the build artifacts
 make clean
 ```
 
@@ -168,7 +171,7 @@ You can launch `rlshim` in your terminal or via your application launcher with t
 `rlshim` intercepts a few specific flags for its own configuration:
 
 - `--no-gui`: Disables using any GUI. If you have multiple characters linked to your Jagex Account or it's your first time running `rlshim`, it will fall back to a terminal-based text prompt.
-- `--logout`: Safely deletes your saved Jagex Account credentials from your system keyring (`libsecret`). The program will exit, and the next time you launch `rlshim`, you will be prompted to log in interactively again.
+- `--logout`: Safely deletes your saved Jagex Account credentials from your system keyring (`libsecret`) and local encrypted vault. The program will exit, and the next time you launch `rlshim`, you will be prompted to log in interactively again.
 
 ### Forwarded Flags
 

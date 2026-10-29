@@ -14,9 +14,9 @@
       packages = forAllSystems (system:
         let
           pkgs = pkgsFor.${system};
-          curl-impersonate-version = "1.5.6";
+          curl-impersonate-version = "1.5.0";
           curl-impersonate-arch = if system == "x86_64-linux" then "x86_64" else "aarch64";
-          
+
           curl-impersonate = pkgs.fetchurl {
             url = "https://github.com/lexiforest/curl-impersonate/releases/download/v${curl-impersonate-version}/libcurl-impersonate-v${curl-impersonate-version}.${curl-impersonate-arch}-linux-gnu.tar.gz";
             sha256 = if system == "x86_64-linux" then
@@ -25,63 +25,36 @@
                        "b4e4f713655616efd2be83153d9057b5961c15e34563dde09a8b6798a8b331e9";
           };
 
-          json-src = pkgs.fetchFromGitHub {
-            owner = "nlohmann";
-            repo = "json";
-            rev = "v3.12.0";
-            hash = "sha256-cECvDOLxgX7Q9R3IE86Hj9JJUxraDQvhoyPDF03B2CY=";
-          };
-
-          glfw-src = pkgs.fetchFromGitHub {
-            owner = "glfw";
-            repo = "glfw";
-            rev = "3.3.8";
-            hash = "sha256-4+H0IXjAwbL5mAWfsIVhW0BSJhcWjkQx4j2TrzZ3aIo=";
-          };
-
-          imgui-src = pkgs.fetchFromGitHub {
-            owner = "ocornut";
-            repo = "imgui";
-            rev = "v1.92.8";
-            hash = "sha256-NaSgDE5QEEMrsgYOCAPx5d0XvCIQ9T+ciAKfLFhlmzw=";
-          };
-
         in {
-          default = pkgs.stdenv.mkDerivation {
+          default = pkgs.rustPlatform.buildRustPackage {
             pname = "rlshim";
-            version = "1.1.1";
+            version = "1.5.0";
 
             src = ./.;
 
+            cargoLock = {
+              lockFile = ./Cargo.lock;
+            };
+
             nativeBuildInputs = with pkgs; [
-              cmake
               pkg-config
-              clang
             ];
 
             buildInputs = with pkgs; [
               libsecret
-              openssl
-              glfw
-              libGL
-              curl
-              libx11
-              libxrandr
-              libxinerama
-              libxcursor
-              libxi
+              stdenv.cc.cc.lib
             ];
 
-            cmakeFlags = [
-              "-DFETCHCONTENT_SOURCE_DIR_JSON=${json-src}"
-              "-DFETCHCONTENT_SOURCE_DIR_GLFW=${glfw-src}"
-              "-DFETCHCONTENT_SOURCE_DIR_IMGUI=${imgui-src}"
-            ];
+            preBuild = ''
+              mkdir -p _bundled
+              cp ${curl-impersonate} _bundled/libcurl-impersonate.tar.gz
+            '';
 
-            preConfigure = ''
-              # Pre-populate the curl-impersonate extracted directory so CMake skips the download
-              mkdir -p build/_deps/curl-impersonate/extracted
-              tar -xzf ${curl-impersonate} -C build/_deps/curl-impersonate/extracted
+            postInstall = ''
+              install -Dm644 rlshim.desktop "$out/share/applications/rlshim.desktop"
+              install -Dm644 data/icon.png "$out/share/pixmaps/rlshim.png"
+              install -d "$out/share/rlshim/data"
+              install -m644 data/* "$out/share/rlshim/data/"
             '';
           };
         }
