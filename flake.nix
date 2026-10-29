@@ -14,7 +14,7 @@
       packages = forAllSystems (system:
         let
           pkgs = pkgsFor.${system};
-          curl-impersonate-version = "1.5.0";
+          curl-impersonate-version = "1.5.6";
           curl-impersonate-arch = if system == "x86_64-linux" then "x86_64" else "aarch64";
 
           curl-impersonate = pkgs.fetchurl {

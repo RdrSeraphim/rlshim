@@ -96,8 +96,8 @@ if [[ -f "$CARGO_LOCK" ]]; then
     echo "  Cargo.lock              rlshim version"
 fi
 
-# flake.nix: update version attribute.
-sed -i -E "s/(version = \")[0-9]+\.[0-9]+\.[0-9]+(\";)/\1${NEW}\2/" "$FLAKE_NIX"
+# flake.nix: update package version attribute (whitespace-anchored so curl-impersonate-version is untouched).
+sed -i -E "s/^([[:space:]]+version = \")[0-9]+\.[0-9]+\.[0-9]+(\";)/\1${NEW}\2/" "$FLAKE_NIX"
 echo "  flake.nix               version"
 
 # rpm specs: the "Version:" field (leading-anchored so changelog lines survive).
