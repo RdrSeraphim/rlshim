@@ -5,8 +5,8 @@ pkgdesc="A lightweight, native Linux launcher for RuneLite."
 arch=('x86_64' 'aarch64')
 url="https://github.com/RdrSeraphim/rlshim"
 license=('BSD-2-Clause')
-depends=('libsecret' 'openssl' 'glfw' 'glibc' 'java-runtime>=11')
-makedepends=('cmake' 'clang' 'make' 'pkgconf' 'curl' 'git' 'libx11' 'libxcursor' 'libxi' 'libxinerama' 'libxrandr')
+depends=('libsecret' 'gcc-libs' 'glibc' 'java-runtime>=11')
+makedepends=('cargo' 'make' 'pkgconf' 'curl')
 provides=('rlshim')
 conflicts=('rlshim')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/RdrSeraphim/rlshim/archive/refs/tags/v$pkgver.tar.gz")
@@ -14,11 +14,10 @@ sha256sums=('SKIP')
 
 build() {
     cd "$pkgname-$pkgver"
-    CXX=clang++ CC=clang cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
-    cmake --build build -j$(nproc)
+    cargo build --release --locked
 }
 
 package() {
     cd "$pkgname-$pkgver"
-    DESTDIR="$pkgdir" cmake --install build
+    DESTDIR="$pkgdir" PREFIX=/usr make install
 }

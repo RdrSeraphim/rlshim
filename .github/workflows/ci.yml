@@ -16,13 +16,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo build
+        uses: Swatinem/rust-cache@v2
+
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake
+          sudo apt-get install -y build-essential pkg-config libsecret-1-dev curl
 
       - name: Build and run tests
-        run: CXX=clang++ CC=clang make test
+        run: make test
 
   build:
     name: Build ${{ matrix.arch }}-${{ matrix.libc }}
@@ -53,20 +59,28 @@ jobs:
         if: matrix.libc == 'glibc'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang build-essential cmake pkg-config libsecret-1-dev libssl-dev libglfw3-dev libgl1-mesa-dev rpm libcurl4-openssl-dev libx11-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
+          sudo apt-get install -y build-essential pkg-config libsecret-1-dev curl rpm
+
+      - name: Install Rust toolchain (glibc)
+        if: matrix.libc == 'glibc'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo build (glibc)
+        if: matrix.libc == 'glibc'
+        uses: Swatinem/rust-cache@v2
 
       - name: Build Debug Packages (glibc)
         if: matrix.libc == 'glibc'
         run: |
-          CXX=clang++ CC=clang make debug-package
+          make debug-package
 
       - name: Build Debug Packages (musl)
         if: matrix.libc == 'musl'
         run: |
           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest /bin/sh -c "\
             apk update && \
-            apk add clang make cmake pkgconf libsecret-dev openssl-dev glfw-dev mesa-dev g++ curl-dev git libx11-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev && \
-            CXX=clang++ CC=clang make debug-tar"
+            apk add build-base make pkgconf libsecret-dev curl tar git rust cargo && \
+            RUSTFLAGS='-C target-feature=-crt-static' make debug-tar"
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4

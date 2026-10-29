@@ -6,6 +6,7 @@ command: rlshim
 
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.openjdk25
+  - org.freedesktop.Sdk.Extension.rust-stable
 
 finish-args:
   # Network access for Jagex account authentication and RuneLite downloads
@@ -30,22 +31,13 @@ modules:
 
   - name: rlshim
     buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      build-args:
+        - --share=network
     build-commands:
-      # Pre-extract curl-impersonate into the location CMake expects
-      - mkdir -p build/_deps/curl-impersonate/extracted
-      - tar -xzf _bundled/libcurl-impersonate.tar.gz --no-same-owner -C build/_deps/curl-impersonate/extracted
-
-      # Configure and build
-      - >-
-        cmake -B build -S .
-        -GNinja
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_INSTALL_PREFIX=/app
-        -DFETCHCONTENT_SOURCE_DIR_JSON=$PWD/_bundled/json
-        -DFETCHCONTENT_SOURCE_DIR_GLFW=$PWD/_bundled/glfw
-        -DFETCHCONTENT_SOURCE_DIR_IMGUI=$PWD/_bundled/imgui
-      - cmake --build build
-      - cmake --install build
+      - cargo build --release --locked
+      - make install PREFIX=/app
 
       # Rename desktop file and icon to match Flatpak app ID
       - mv /app/share/applications/rlshim.desktop /app/share/applications/life.srp.rlshim.desktop
@@ -58,24 +50,6 @@ modules:
       # Main source
       - type: dir
         path: ../../
-
-      # nlohmann/json v3.12.0
-      - type: archive
-        url: https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.tar.gz
-        sha256: 4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187
-        dest: _bundled/json
-
-      # GLFW 3.3.8
-      - type: archive
-        url: https://github.com/glfw/glfw/archive/refs/tags/3.3.8.tar.gz
-        sha256: f30f42e05f11e5fc62483e513b0488d5bceeab7d9c5da0ffe2252ad81816c713
-        dest: _bundled/glfw
-
-      # Dear ImGui v1.92.8
-      - type: archive
-        url: https://github.com/ocornut/imgui/archive/refs/tags/v1.92.8.tar.gz
-        sha256: fecb33d33930e12ff53a34064e9d3a06c8f7c3e04408f14cd36c80e3faac863b
-        dest: _bundled/imgui
 
       # libcurl-impersonate v1.5.6 (x86_64, glibc)
       - type: file

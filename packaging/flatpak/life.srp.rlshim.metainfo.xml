@@ -18,6 +18,8 @@
       <li>Native launcher — no Chromium Embedded Framework dependency</li>
       <li>Secure credential storage via libsecret (gnome-keyring, KWallet, etc.) or encrypted file store</li>
       <li>Minimal footprint — under 32 MB including assets</li>
+      <li>Secure credential storage via libsecret (gnome-keyring, KWallet, etc.) or encrypted file store</li>
+      <li>Minimal footprint — under 16 MB including assets</li>
       <li>Supports multi-character Jagex Accounts</li>
     </ul>
   </description>
@@ -34,6 +36,16 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.4.0" date="2026-09-21">
+      <description>
+        <p>add encrypted credentials vault for fallback</p>
+      </description>
+    </release>
+    <release version="1.5.0" date="2026-10-28">
+      <description>
+        <p>Port to rust, various Steam Deck bug fixes.</p>
+      </description>
+    </release>
     <release version="1.4.0" date="2026-09-21">
       <description>
         <p>add encrypted credentials vault for fallback</p>
