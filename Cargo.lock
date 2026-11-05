@@ -2293,7 +2293,7 @@ checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
 
 [[package]]
 name = "rlshim"
-version = "1.5.0"
+version = "1.5.1"
 dependencies = [
  "aes-gcm",
  "clap",

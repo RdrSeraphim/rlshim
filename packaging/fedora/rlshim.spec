@@ -1,5 +1,5 @@
 Name:           rlshim
-Version:        1.5.0
+Version:        1.5.1
 Release:        1%{?dist}
 Summary:        A lightweight, native Linux launcher for RuneLite.
 
@@ -44,6 +44,8 @@ DESTDIR=%{buildroot} PREFIX=%{_prefix} make install
 %{_datadir}/rlshim/data/*.ttf
 
 %changelog
+* Wed Nov 04 2026 Seraphim Pardee <me@srp.life> - 1.5.1-1
+- build fixes for offline chroot with local deps
 * Wed Oct 28 2026 Seraphim Pardee <me@srp.life> - 1.5.0-1
 - Port to rust, various Steam Deck bug fixes.
 * Mon Sep 21 2026 Seraphim Pardee <me@srp.life> - 1.4.0-1

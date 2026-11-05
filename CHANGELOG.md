@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1](https://github.com/RdrSeraphim/rlshim/compare/v1.5.0..v1.5.1) - 2026-11-05
+
+### 🐛 Bug Fixes
+
+- Handle dependencies where they might be in an offline chroot ([3953be6](https://github.com/RdrSeraphim/rlshim/-/commit/3953be6f19cd66f951b398ede59a0726aa74d6d5))
+
 ## [1.5.0](https://github.com/RdrSeraphim/rlshim/compare/v1.4.0..v1.5.0) - 2026-10-29
 
 ### 🚀 Features

@@ -34,6 +34,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.5.1" date="2026-11-04">
+      <description>
+        <p>build fixes for offline chroot with local deps</p>
+      </description>
+    </release>
     <release version="1.5.0" date="2026-10-28">
       <description>
         <p>Port to rust, various Steam Deck bug fixes.</p>
