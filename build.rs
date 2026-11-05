@@ -52,7 +52,7 @@ fn main() {
             assert!(status.success(), "Failed to download {url}");
 
             let tar_status = Command::new("tar")
-                .args(["-xzf"])
+                .args(["--no-same-owner", "-xzf"])
                 .arg(&archive_path)
                 .arg("-C")
                 .arg(&extracted)
