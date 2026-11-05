@@ -6,55 +6,51 @@ Summary:        A lightweight, native Linux launcher for RuneLite.
 License:        BSD-2-Clause
 URL:            https://github.com/RdrSeraphim/rlshim
 Source0:        %{name}-%{version}.tar.gz
-Source1:        libcurl-impersonate-v1.5.6.x86_64-linux-gnu.tar.gz
-Source2:        libcurl-impersonate-v1.5.6.aarch64-linux-gnu.tar.gz
-Source3:        vendor.tar.zst
+Source1:        vendor.tar.gz
+Source2:        libcurl-impersonate-v1.5.6.x86_64-linux-gnu.tar.gz
+Source3:        libcurl-impersonate-v1.5.6.aarch64-linux-gnu.tar.gz
 
-BuildRequires:  cargo
-BuildRequires:  rust
+BuildRequires:  cargo-packaging
+BuildRequires:  rust >= 1.85
+BuildRequires:  gcc
 BuildRequires:  gcc-c++
-BuildRequires:  make
 BuildRequires:  pkg-config
 BuildRequires:  pkgconf
 BuildRequires:  libsecret-devel
-BuildRequires:  zstd
 
-Requires:       libsecret
+# Runtime dependencies (eframe/winit dlopens Wayland/X11/GL at runtime)
+Requires:       libsecret-1-0
 Requires:       glibc
-# RuneLite needs a JRE (11+); rlshim can't launch it otherwise, so pull one in.
-Requires:       java >= 11
+Requires:       jre >= 11
 
 %description
 rlshim is a lightweight, native Linux launcher for RuneLite, designed as an alternative to the official AppImage and Flatpak.
 
 %prep
-%setup -q -n rlshim-%{version} -a 3
+%autosetup -a1
 
 %build
-mkdir -p _bundled
+mkdir -p %{_builddir}/curl-impersonate-extracted
 %ifarch x86_64
-cp %{SOURCE1} _bundled/libcurl-impersonate.tar.gz
+tar -xzf %{SOURCE2} -C %{_builddir}/curl-impersonate-extracted
 %endif
 %ifarch aarch64
-cp %{SOURCE2} _bundled/libcurl-impersonate.tar.gz
+tar -xzf %{SOURCE3} -C %{_builddir}/curl-impersonate-extracted
 %endif
 
-if [ -d vendor ]; then
-    mkdir -p .cargo
-    cat > .cargo/config.toml <<EOF
-[source.crates-io]
-replace-with = "vendored-sources"
-
-[source.vendored-sources]
-directory = "vendor"
-EOF
-    cargo build --release --locked --offline
-else
-    cargo build --release --locked
-fi
+export RLSHIM_CURL_IMP_DIR="%{_builddir}/curl-impersonate-extracted"
+%cargo_build
 
 %install
-DESTDIR=%{buildroot} PREFIX=%{_prefix} make install
+install -Dm755 target/release/rlshim %{buildroot}%{_bindir}/rlshim
+install -Dm644 rlshim.desktop %{buildroot}%{_datadir}/applications/rlshim.desktop
+install -Dm644 data/icon.png %{buildroot}%{_datadir}/pixmaps/rlshim.png
+install -d %{buildroot}%{_datadir}/rlshim/data
+cp -a data/* %{buildroot}%{_datadir}/rlshim/data/
+
+%check
+export RLSHIM_CURL_IMP_DIR="%{_builddir}/curl-impersonate-extracted"
+%cargo_test
 
 %files
 %license LICENSE
