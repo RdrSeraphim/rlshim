@@ -210,6 +210,7 @@ fn dump_all_pngs(out_dir: &Path) {
         let app = char_app.get_or_insert_with(|| gui::CharSelectApp {
             bg: gui::load_background_texture(ctx),
             accounts: sample_accounts(),
+            save_as_default: false,
             result_slot: Arc::new(Mutex::new(None)),
         });
         app.draw(ctx);
@@ -290,7 +291,7 @@ fn main() {
     let mode = args.first().map_or("all", String::as_str);
     match mode {
         "char" => {
-            let _ = gui::prompt_for_character(&sample_accounts());
+            let _ = gui::prompt_for_character(&sample_accounts(), false);
         }
         "url" | "url1" => {
             let _ = gui::prompt_for_url(
@@ -315,7 +316,7 @@ fn main() {
         "warn-keyring" => gui::warning_prompt("keyring error", WARN_KEYRING, 260),
         "warn-runelite" => gui::warning_prompt("runelite error", WARN_RUNELITE, 260),
         "all" => {
-            let _ = gui::prompt_for_character(&sample_accounts());
+            let _ = gui::prompt_for_character(&sample_accounts(), false);
             let _ = gui::prompt_for_url(
                 "rlshim - initial login",
                 URL_STEP1_INSTRUCTIONS,

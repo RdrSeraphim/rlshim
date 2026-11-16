@@ -9,3 +9,8 @@ Exec=rlshim
 Icon=rlshim
 Categories=Game;
 StartupWMClass=RuneLite
+Actions=ClearSavedChar;
+
+[Desktop Action ClearSavedChar]
+Name=Choose Character (Clear Default)
+Exec=rlshim --clear-saved-char

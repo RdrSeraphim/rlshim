@@ -12,6 +12,13 @@
   <service name="download_url">
     <param name="host">github.com</param>
     <param name="protocol">https</param>
+    <param name="path">/RdrSeraphim/rlshim/releases/latest/download/vendor.tar.gz</param>
+    <param name="filename">vendor.tar.gz</param>
+  </service>
+
+  <service name="download_url">
+    <param name="host">github.com</param>
+    <param name="protocol">https</param>
     <param name="path">/lexiforest/curl-impersonate/releases/download/v1.5.6/libcurl-impersonate-v1.5.6.x86_64-linux-gnu.tar.gz</param>
   </service>
 
@@ -21,20 +28,13 @@
     <param name="path">/lexiforest/curl-impersonate/releases/download/v1.5.6/libcurl-impersonate-v1.5.6.aarch64-linux-gnu.tar.gz</param>
   </service>
 
-  <!-- Create tarball from the obs_scm checkout (server-side so cargo_vendor can consume it) -->
-  <service name="tar"/>
+  <!-- Create tarball from the obs_scm checkout -->
+  <service name="tar" mode="buildtime"/>
 
   <!-- Recompress source tar to .tar.gz -->
-  <service name="recompress">
-    <param name="file">*rlshim-*.tar</param>
+  <service name="recompress" mode="buildtime">
+    <param name="file">rlshim-*.tar</param>
     <param name="compression">gz</param>
-  </service>
-
-  <!-- Vendor Rust crates from Cargo.lock into vendor.tar.gz on OBS service host -->
-  <service name="cargo_vendor">
-    <param name="srctar">*rlshim-*.tar.gz</param>
-    <param name="compression">gz</param>
-    <param name="update">false</param>
   </service>
 
   <!-- Update the Version: field in the spec file automatically -->

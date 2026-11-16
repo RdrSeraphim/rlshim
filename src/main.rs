@@ -29,11 +29,11 @@ struct Args {
     #[arg(short = 'l', long = "logout")]
     do_logout: bool,
 
-    /// use the current saved character or, if none saved, save the character chosen at the selection menu
-    #[arg(short = 's', long = "use-saved-char")]
-    use_saved_character: bool,
+    /// save the character chosen at the selection menu as the default for future launches
+    #[arg(short = 's', long = "save-char", alias = "use-saved-char")]
+    save_character: bool,
 
-    /// clears the currently saved character. if --use-saved-char is set, this clears the saved character and will save the next selected character
+    /// clears the currently saved character. if --save-char is set, this clears the saved character and will save the next selected character
     #[arg(short = 'c', long = "clear-saved-char")]
     clear_saved_character: bool,
 
@@ -152,7 +152,7 @@ fn main() -> ExitCode {
     if session.accounts.len() == 1 {
         selected_account = Some(session.accounts[0].clone());
     } else {
-        if args.use_saved_character && !args.clear_saved_character {
+        if !args.clear_saved_character {
             let saved_name = runelite::read_saved_character();
             if !saved_name.is_empty() {
                 selected_account = session
@@ -165,15 +165,15 @@ fn main() -> ExitCode {
 
         if selected_account.is_none() {
             let acc_opt = if args.dont_use_gui {
-                cli::prompt_for_character(&session.accounts)
+                cli::prompt_for_character(&session.accounts).map(|acc| (acc, args.save_character))
             } else {
-                gui::prompt_for_character(&session.accounts)
+                gui::prompt_for_character(&session.accounts, args.save_character)
             };
-            let Some(acc) = acc_opt else {
+            let Some((acc, should_save)) = acc_opt else {
                 log_error!("character selection aborted or failed");
                 return ExitCode::FAILURE;
             };
-            if args.use_saved_character {
+            if should_save {
                 runelite::save_character(&acc.display_name);
             }
             selected_account = Some(acc);

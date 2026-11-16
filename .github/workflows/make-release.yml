@@ -4,9 +4,16 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to build and upload vendor.tar.gz for (e.g. v1.5.1)"
+        required: true
+        type: string
 
 jobs:
   release:
+    if: github.event_name == 'push'
     name: Build ${{ matrix.arch }}-${{ matrix.libc }}
     runs-on: ${{ matrix.os }}
 
@@ -89,6 +96,7 @@ jobs:
           retention-days: 1
 
   flatpak:
+    if: github.event_name == 'push'
     name: Build Flatpak ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     container:
@@ -122,9 +130,36 @@ jobs:
           name: rlshim-flatpak-release-${{ matrix.arch }}
           path: life.srp.rlshim-${{ matrix.arch }}.flatpak
           retention-days: 1
+
+  vendor:
+    name: Vendor Rust dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Generate vendor.tar.gz
+        run: |
+          mkdir -p .cargo
+          cargo vendor --locked vendor > .cargo/config.toml
+          tar -czf vendor.tar.gz vendor .cargo/config.toml
+
+      - name: Upload Vendor Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rlshim-vendor
+          path: vendor.tar.gz
+          retention-days: 1
+
   publish:
+    if: github.event_name == 'push'
     name: Publish Release
-    needs: [release, flatpak]
+    needs: [release, flatpak, vendor]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -172,3 +207,41 @@ jobs:
             artifacts/*.tar.gz
             artifacts/*.flatpak
             artifacts/aur_pkgbuilds.zip
+
+  upload-vendor:
+    if: github.event_name == 'workflow_dispatch'
+    name: Upload vendor.tar.gz to existing release
+    needs: [vendor]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Vendor Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rlshim-vendor
+
+      - name: Upload vendor.tar.gz to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+        run: gh release upload "$TAG" vendor.tar.gz --clobber
+
+  trigger-obs:
+    name: Trigger OBS Build
+    needs: [publish, upload-vendor]
+    if: always() && (needs.publish.result == 'success' || needs.upload-vendor.result == 'success')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger OBS runservice
+        env:
+          OBS_TOKEN: ${{ secrets.OBS_TOKEN }}
+        run: |
+          if [ -z "${OBS_TOKEN}" ]; then
+            echo "::notice::OBS_TOKEN secret not set; skipping OBS trigger"
+            exit 0
+          fi
+          curl -fsSL -H "Authorization: Token ${OBS_TOKEN}" \
+            -X POST "https://build.opensuse.org/trigger/runservice?project=home:RdrSeraphim:rlshim&package=rlshim"

@@ -170,21 +170,21 @@ You can launch `rlshim` in your terminal or via your application launcher with t
 Usage: rlshim [OPTIONS]
 
 Options:
-  -t, --no-gui                      disables gui, all applicable prompts sent to stdout
-  -l, --logout                      log out of rlshim, clearing all saved credentials
-  -s, --use-saved-char              use the current saved character or, if none saved, save the character chosen at the selection menu
-  -c, --clear-saved-char            clears the currently saved character. if --use-saved-char is set, this clears the saved character and will save the next selected character
-  -f, --flags <RL_FLAGS>...         flags to pass to RuneLite
-  -h, --help                        Print help
-  -V, --version                     Print version
+  -t, --no-gui               disables gui, all applicable prompts sent to stdout
+  -l, --logout               log out of rlshim, clearing all saved credentials
+  -s, --save-char            save the character chosen at the selection menu as the default for future launches
+  -c, --clear-saved-char     clears the currently saved character. if --save-char is set, this clears the saved character and will save the next selected character
+  -f, --flags <RL_FLAGS>...  flags to pass to RuneLite
+  -h, --help                 Print help
+  -V, --version              Print version
 ```
 
 ### Options
 
 - `-t`, `--no-gui`: Disables using any GUI. If you have multiple characters linked to your Jagex Account or it's your first time running `rlshim`, it will fall back to a terminal-based text prompt.
 - `-l`, `--logout`: Safely deletes your saved Jagex Account credentials from your system keyring (`libsecret`) and local encrypted vault. The program will exit, and the next time you launch `rlshim`, you will be prompted to log in interactively again.
-- `-s`, `--use-saved-char`: Automatically selects your previously saved character if you have multiple characters linked to your Jagex Account. If no character is saved yet, the character you choose at the selection prompt will be saved for future launches.
-- `-c`, `--clear-saved-char`: Clears your currently saved character selection. If combined with `-s` / `--use-saved-char`, it clears the saved character and saves whichever character you select next.
+- `-s`, `--save-char`: Saves the character you choose at the selection prompt so future launches select it automatically (the CLI equivalent of checking **save as default** in the GUI).
+- `-c`, `--clear-saved-char`: Clears your currently saved character selection (also available via right-clicking the RuneLite desktop entry → **Choose Character (Clear Default)**). If combined with `-s` / `--save-char`, it clears the saved character and saves whichever character you select next.
 - `-f`, `--flags <RL_FLAGS>...`: Passes one or more space-separated flags directly through to `runelite.jar`.
 
 ### Forwarding Flags to RuneLite

@@ -188,19 +188,46 @@ fn quill_font(size: f32) -> FontId {
 }
 
 fn draw_centered_text(ui: &mut egui::Ui, text: RichText) {
+    let avail_w = ui.available_width();
     let widget_text = egui::WidgetText::from(text);
     let galley = widget_text.into_galley(
         ui,
-        Some(egui::TextWrapMode::Extend),
-        f32::INFINITY,
+        Some(egui::TextWrapMode::Wrap),
+        avail_w,
         egui::TextStyle::Body,
     );
-    let avail_w = ui.available_width();
     let offset_x = ((avail_w - galley.size().x) * 0.5).max(0.0);
     ui.horizontal(|ui| {
         ui.add_space(offset_x);
         ui.label(galley);
     });
+}
+
+fn show_scrollable_panel(
+    ctx: &egui::Context,
+    bg: &Option<(TextureHandle, Vec2)>,
+    add_contents: impl FnOnce(&mut egui::Ui),
+) {
+    draw_background_and_border(ctx, bg);
+
+    egui::CentralPanel::default()
+        .frame(egui::Frame::NONE.inner_margin(8.0))
+        .show(ctx, |ui| {
+            egui::ScrollArea::both()
+                .auto_shrink(false)
+                .show(ui, add_contents);
+        });
+}
+
+fn make_native_options(title: &str, height: f32) -> eframe::NativeOptions {
+    eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default()
+            .with_title(title)
+            .with_inner_size([600.0, height])
+            .with_resizable(true)
+            .with_decorations(false),
+        ..Default::default()
+    }
 }
 
 fn open_url_in_browser(url: &str) {
@@ -221,101 +248,97 @@ pub(crate) struct UrlPromptApp {
 
 impl UrlPromptApp {
     pub(crate) fn draw(&mut self, ctx: &egui::Context) {
-        draw_background_and_border(ctx, &self.bg);
+        show_scrollable_panel(ctx, &self.bg, |ui| {
+            draw_centered_text(
+                ui,
+                RichText::new("rlshim").font(quill_font(64.0)).color(YELLOW),
+            );
+            ui.add_space(42.0);
 
-        egui::CentralPanel::default()
-            .frame(egui::Frame::NONE.inner_margin(8.0))
-            .show(ctx, |ui| {
-                draw_centered_text(
-                    ui,
-                    RichText::new("rlshim").font(quill_font(64.0)).color(YELLOW),
-                );
-                ui.add_space(42.0);
+            ui.label(RichText::new(&self.instructions).color(YELLOW));
+            ui.add_space(8.0);
 
-                ui.label(RichText::new(&self.instructions).color(YELLOW));
-                ui.add_space(8.0);
-
-                let mut readonly_url = self.url_to_open.as_str();
-                egui::Frame::NONE
-                    .fill(Color32::BLACK)
-                    .stroke(Stroke::new(1.0f32, YELLOW))
-                    .inner_margin(egui::Margin::symmetric(4, 3))
-                    .show(ui, |ui| {
-                        ui.add_sized(
-                            [ui.available_width(), 120.0],
-                            egui::TextEdit::multiline(&mut readonly_url)
-                                .text_color(Color32::WHITE)
-                                .frame(false),
-                        );
-                    });
-
-                ui.horizontal(|ui| {
-                    let is_opened = self
-                        .opened_at
-                        .is_some_and(|t| t.elapsed().as_secs_f32() <= 5.0);
-                    if is_opened {
-                        ui.add_sized([150.0, 40.0], egui::Button::new("opened!"));
-                        ctx.request_repaint();
-                    } else {
-                        self.opened_at = None;
-                        if ui
-                            .add_sized([150.0, 40.0], egui::Button::new("open in browser"))
-                            .clicked()
-                        {
-                            open_url_in_browser(&self.url_to_open);
-                            self.opened_at = Some(Instant::now());
-                        }
-                    }
-
-                    let is_copied = self
-                        .copied_at
-                        .is_some_and(|t| t.elapsed().as_secs_f32() <= 5.0);
-                    if is_copied {
-                        ui.add_sized([150.0, 40.0], egui::Button::new("copied!"));
-                        ctx.request_repaint();
-                    } else {
-                        self.copied_at = None;
-                        if ui
-                            .add_sized([150.0, 40.0], egui::Button::new("copy url to clipboard"))
-                            .clicked()
-                        {
-                            ctx.copy_text(self.url_to_open.clone());
-                            self.copied_at = Some(Instant::now());
-                        }
-                    }
+            let mut readonly_url = self.url_to_open.as_str();
+            egui::Frame::NONE
+                .fill(Color32::BLACK)
+                .stroke(Stroke::new(1.0f32, YELLOW))
+                .inner_margin(egui::Margin::symmetric(4, 3))
+                .show(ui, |ui| {
+                    ui.add_sized(
+                        [ui.available_width(), 120.0],
+                        egui::TextEdit::multiline(&mut readonly_url)
+                            .text_color(Color32::WHITE)
+                            .frame(false),
+                    );
                 });
 
-                ui.add_space(20.0);
-                ui.label(RichText::new(&self.instructions_pt_2).color(YELLOW));
-
-                egui::Frame::NONE
-                    .fill(Color32::BLACK)
-                    .stroke(Stroke::new(1.0f32, YELLOW))
-                    .inner_margin(egui::Margin::symmetric(4, 0))
-                    .show(ui, |ui| {
-                        ui.add_sized(
-                            [ui.available_width(), 20.0],
-                            egui::TextEdit::singleline(&mut self.input_buf)
-                                .hint_text(
-                                    RichText::new(&self.url_placeholder)
-                                        .color(Color32::from_rgb(128, 128, 128)),
-                                )
-                                .text_color(Color32::WHITE)
-                                .frame(false),
-                        );
-                    });
-
-                ui.add_space(4.0);
-                if ui
-                    .add_sized([120.0, 40.0], egui::Button::new("okay here you go!"))
-                    .clicked()
-                {
-                    if !self.input_buf.is_empty() {
-                        *self.result_slot.lock().unwrap() = Some(self.input_buf.clone());
+            ui.horizontal_wrapped(|ui| {
+                let is_opened = self
+                    .opened_at
+                    .is_some_and(|t| t.elapsed().as_secs_f32() <= 5.0);
+                if is_opened {
+                    ui.add_sized([150.0, 40.0], egui::Button::new("opened!"));
+                    ctx.request_repaint();
+                } else {
+                    self.opened_at = None;
+                    if ui
+                        .add_sized([150.0, 40.0], egui::Button::new("open in browser"))
+                        .clicked()
+                    {
+                        open_url_in_browser(&self.url_to_open);
+                        self.opened_at = Some(Instant::now());
                     }
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                }
+
+                let is_copied = self
+                    .copied_at
+                    .is_some_and(|t| t.elapsed().as_secs_f32() <= 5.0);
+                if is_copied {
+                    ui.add_sized([150.0, 40.0], egui::Button::new("copied!"));
+                    ctx.request_repaint();
+                } else {
+                    self.copied_at = None;
+                    if ui
+                        .add_sized([150.0, 40.0], egui::Button::new("copy url to clipboard"))
+                        .clicked()
+                    {
+                        ctx.copy_text(self.url_to_open.clone());
+                        self.copied_at = Some(Instant::now());
+                    }
                 }
             });
+
+            ui.add_space(20.0);
+            ui.label(RichText::new(&self.instructions_pt_2).color(YELLOW));
+
+            egui::Frame::NONE
+                .fill(Color32::BLACK)
+                .stroke(Stroke::new(1.0f32, YELLOW))
+                .inner_margin(egui::Margin::symmetric(4, 0))
+                .show(ui, |ui| {
+                    ui.add_sized(
+                        [ui.available_width(), 20.0],
+                        egui::TextEdit::singleline(&mut self.input_buf)
+                            .hint_text(
+                                RichText::new(&self.url_placeholder)
+                                    .color(Color32::from_rgb(128, 128, 128)),
+                            )
+                            .text_color(Color32::WHITE)
+                            .frame(false),
+                    );
+                });
+
+            ui.add_space(4.0);
+            if ui
+                .add_sized([120.0, 40.0], egui::Button::new("okay here you go!"))
+                .clicked()
+            {
+                if !self.input_buf.is_empty() {
+                    *self.result_slot.lock().unwrap() = Some(self.input_buf.clone());
+                }
+                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            }
+        });
     }
 }
 
@@ -328,46 +351,51 @@ impl eframe::App for UrlPromptApp {
 pub(crate) struct CharSelectApp {
     pub(crate) bg: Option<(TextureHandle, Vec2)>,
     pub(crate) accounts: Vec<GameAccount>,
-    pub(crate) result_slot: Arc<Mutex<Option<GameAccount>>>,
+    pub(crate) save_as_default: bool,
+    pub(crate) result_slot: Arc<Mutex<Option<(GameAccount, bool)>>>,
 }
 
 impl CharSelectApp {
     pub(crate) fn draw(&mut self, ctx: &egui::Context) {
-        draw_background_and_border(ctx, &self.bg);
+        show_scrollable_panel(ctx, &self.bg, |ui| {
+            draw_centered_text(
+                ui,
+                RichText::new("rlshim").font(quill_font(64.0)).color(YELLOW),
+            );
+            ui.add_space(20.0);
+            draw_centered_text(
+                ui,
+                RichText::new("choose a character").size(32.0).color(YELLOW),
+            );
+            ui.add_space(16.0);
 
-        egui::CentralPanel::default()
-            .frame(egui::Frame::NONE.inner_margin(8.0))
-            .show(ctx, |ui| {
-                draw_centered_text(
-                    ui,
-                    RichText::new("rlshim").font(quill_font(64.0)).color(YELLOW),
-                );
-                ui.add_space(20.0);
-                draw_centered_text(
-                    ui,
-                    RichText::new("choose a character").size(32.0).color(YELLOW),
-                );
-                ui.add_space(42.0);
+            ui.vertical_centered(|ui| {
+                for acc in &self.accounts {
+                    let display_name = if acc.display_name.is_empty() {
+                        "[no name set]"
+                    } else {
+                        &acc.display_name
+                    };
 
-                ui.vertical_centered(|ui| {
-                    for acc in &self.accounts {
-                        let display_name = if acc.display_name.is_empty() {
-                            "[no name set]"
-                        } else {
-                            &acc.display_name
-                        };
-
-                        if ui
-                            .add_sized([300.0, 40.0], egui::Button::new(display_name))
-                            .clicked()
-                        {
-                            *self.result_slot.lock().unwrap() = Some(acc.clone());
-                            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                        }
-                        ui.add_space(4.0);
+                    if ui
+                        .add_sized([300.0, 40.0], egui::Button::new(display_name))
+                        .clicked()
+                    {
+                        *self.result_slot.lock().unwrap() =
+                            Some((acc.clone(), self.save_as_default));
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                     }
-                });
+                    ui.add_space(4.0);
+                }
+
+                ui.add_space(20.0);
+
+                ui.checkbox(
+                    &mut self.save_as_default,
+                    RichText::new("save as default").color(YELLOW),
+                );
             });
+        });
     }
 }
 
@@ -384,31 +412,30 @@ pub(crate) struct WarningApp {
 
 impl WarningApp {
     pub(crate) fn draw(&mut self, ctx: &egui::Context) {
-        draw_background_and_border(ctx, &self.bg);
+        show_scrollable_panel(ctx, &self.bg, |ui| {
+            draw_centered_text(
+                ui,
+                RichText::new("rlshim").font(quill_font(64.0)).color(YELLOW),
+            );
+            ui.add_space(16.0);
+            draw_centered_text(ui, RichText::new(&self.warning_msg).color(YELLOW));
+            ui.add_space(16.0);
+            draw_centered_text(
+                ui,
+                RichText::new(
+                    "run rlshim in a terminal for additional information.\nplease fix this issue and restart the application.",
+                )
+                .color(YELLOW),
+            );
+            ui.add_space(16.0);
 
-        egui::CentralPanel::default()
-            .frame(egui::Frame::NONE.inner_margin(8.0))
-            .show(ctx, |ui| {
-                draw_centered_text(ui, RichText::new("rlshim").font(quill_font(64.0)).color(YELLOW));
-                ui.add_space(16.0);
-                draw_centered_text(ui, RichText::new(&self.warning_msg).color(YELLOW));
-                ui.add_space(16.0);
-                draw_centered_text(
-                    ui,
-                    RichText::new(
-                        "run rlshim in a terminal for additional information.\nplease fix this issue and restart the application.",
-                    )
-                    .color(YELLOW),
-                );
-                ui.add_space(16.0);
-
-                if ui
-                    .add_sized([120.0, 40.0], egui::Button::new("okay, i understand"))
-                    .clicked()
-                {
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                }
-            });
+            if ui
+                .add_sized([120.0, 40.0], egui::Button::new("okay, i understand"))
+                .clicked()
+            {
+                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            }
+        });
     }
 }
 
@@ -428,14 +455,7 @@ pub fn prompt_for_url(
     let result_slot: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
     let slot_clone = Arc::clone(&result_slot);
 
-    let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_title(step_name)
-            .with_inner_size([600.0, 600.0])
-            .with_resizable(false)
-            .with_decorations(false),
-        ..Default::default()
-    };
+    let options = make_native_options(step_name, 600.0);
 
     let instructions = instructions.to_string();
     let instructions_pt_2 = instructions_pt_2.to_string();
@@ -469,26 +489,22 @@ pub fn prompt_for_url(
     res.filter(|s| !s.is_empty())
 }
 
-pub fn prompt_for_character(accounts: &[GameAccount]) -> Option<GameAccount> {
+pub fn prompt_for_character(
+    accounts: &[GameAccount],
+    default_save: bool,
+) -> Option<(GameAccount, bool)> {
     if accounts.is_empty() {
         return None;
     }
     if accounts.len() == 1 {
-        return Some(accounts[0].clone());
+        return Some((accounts[0].clone(), false));
     }
 
-    let result_slot: Arc<Mutex<Option<GameAccount>>> = Arc::new(Mutex::new(None));
+    let result_slot: Arc<Mutex<Option<(GameAccount, bool)>>> = Arc::new(Mutex::new(None));
     let slot_clone = Arc::clone(&result_slot);
     let accounts_vec = accounts.to_vec();
 
-    let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_title("rlshim - choose your character")
-            .with_inner_size([600.0, 600.0])
-            .with_resizable(false)
-            .with_decorations(false),
-        ..Default::default()
-    };
+    let options = make_native_options("rlshim - choose your character", 600.0);
 
     if let Err(e) = eframe::run_native(
         "rlshim - choose your character",
@@ -499,6 +515,7 @@ pub fn prompt_for_character(accounts: &[GameAccount]) -> Option<GameAccount> {
             Ok(Box::new(CharSelectApp {
                 bg,
                 accounts: accounts_vec,
+                save_as_default: default_save,
                 result_slot: slot_clone,
             }))
         }),
@@ -514,14 +531,7 @@ pub fn warning_prompt(short_title: &str, warning: &str, height: i32) {
     let title = format!("rlshim - {short_title}");
     let warning_msg = format!("warning: {warning}");
 
-    let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_title(&title)
-            .with_inner_size([600.0, height as f32])
-            .with_resizable(false)
-            .with_decorations(false),
-        ..Default::default()
-    };
+    let options = make_native_options(&title, height as f32);
 
     let _ = eframe::run_native(
         &title,
@@ -572,5 +582,50 @@ mod tests {
 
         let btn_font = style.text_styles.get(&egui::TextStyle::Button).unwrap();
         assert_eq!(btn_font.size, 16.0);
+    }
+
+    #[test]
+    fn small_viewport_renders_windows_without_clipping_panics() {
+        let ctx = egui::Context::default();
+        configure_fonts_and_style(&ctx);
+
+        let raw_input = egui::RawInput {
+            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(360.0, 240.0))),
+            ..Default::default()
+        };
+
+        let mut url_app = UrlPromptApp {
+            bg: None,
+            instructions: "Open the URL below".to_string(),
+            instructions_pt_2: "Paste the callback URL".to_string(),
+            url_to_open: "https://example.com/auth".to_string(),
+            url_placeholder: "https://localhost/...".to_string(),
+            input_buf: String::new(),
+            opened_at: None,
+            copied_at: None,
+            result_slot: Arc::new(Mutex::new(None)),
+        };
+        let _ = ctx.run(raw_input.clone(), |ctx| url_app.draw(ctx));
+
+        let accounts: Vec<GameAccount> = (0..20)
+            .map(|i| GameAccount {
+                account_id: format!("id-{i}"),
+                display_name: format!("Character {i}"),
+                user_hash: String::new(),
+            })
+            .collect();
+        let mut char_app = CharSelectApp {
+            bg: None,
+            accounts,
+            save_as_default: false,
+            result_slot: Arc::new(Mutex::new(None)),
+        };
+        let _ = ctx.run(raw_input.clone(), |ctx| char_app.draw(ctx));
+
+        let mut warn_app = WarningApp {
+            bg: None,
+            warning_msg: "warning: example message".to_string(),
+        };
+        let _ = ctx.run(raw_input, |ctx| warn_app.draw(ctx));
     }
 }
