@@ -1,5 +1,5 @@
 Name:           rlshim
-Version:        1.5.1
+Version:        1.6.0
 Release:        1%{?dist}
 Summary:        A lightweight, native Linux launcher for RuneLite.
 
@@ -64,6 +64,8 @@ export RLSHIM_CURL_IMP_DIR="%{_builddir}/curl-impersonate-extracted"
 %{_datadir}/rlshim/data/*.ttf
 
 %changelog
+* Mon Nov 16 2026 Seraphim Pardee <me@srp.life> - 1.6.0-1
+- add save char checkbox to gui char select, add scrolling to gui
 * Wed Nov 04 2026 Seraphim Pardee <me@srp.life> - 1.5.1-1
 - build fixes for offline chroot with local deps
 * Wed Oct 28 2026 Seraphim Pardee <me@srp.life> - 1.5.0-1

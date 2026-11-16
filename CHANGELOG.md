@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0](https://github.com/RdrSeraphim/rlshim/compare/v1.5.1..v1.6.0) - 2026-11-16
+
+### 🚀 Features
+
+- Add save character checkbox to gui char select, add scrolling to gui ([dce0e7b](https://github.com/RdrSeraphim/rlshim/-/commit/dce0e7b9c57c2af9cecd2d1f1759ac115030bb18))
+
 ## [1.5.1](https://github.com/RdrSeraphim/rlshim/compare/v1.5.0..v1.5.1) - 2026-11-05
 
 ### 🐛 Bug Fixes
