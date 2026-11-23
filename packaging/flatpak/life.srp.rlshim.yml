@@ -16,6 +16,7 @@ finish-args:
   - --socket=x11
   - --socket=wayland
   - --device=dri
+  - --socket=pulseaudio
   # D-Bus access for libsecret (keyring credential storage)
   - --talk-name=org.freedesktop.secrets
   # RuneLite stores its data in ~/.runelite
