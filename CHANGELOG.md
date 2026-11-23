@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1](https://github.com/RdrSeraphim/rlshim/compare/v1.6.0..v1.6.1) - 2026-11-23
+
+### 🐛 Bug Fixes
+
+- Add pulseaudio socket permission to flatpak manifest ([6ff62e7](https://github.com/RdrSeraphim/rlshim/-/commit/6ff62e7df3253003ddc90709cfbf966621bd1037))
+
 ## [1.6.0](https://github.com/RdrSeraphim/rlshim/compare/v1.5.1..v1.6.0) - 2026-11-16
 
 ### 🚀 Features

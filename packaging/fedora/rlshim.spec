@@ -1,5 +1,5 @@
 Name:           rlshim
-Version:        1.6.0
+Version:        1.6.1
 Release:        1%{?dist}
 Summary:        A lightweight, native Linux launcher for RuneLite.
 
@@ -44,6 +44,8 @@ DESTDIR=%{buildroot} PREFIX=%{_prefix} make install
 %{_datadir}/rlshim/data/*.ttf
 
 %changelog
+* Sun Nov 22 2026 Seraphim Pardee <me@srp.life> - 1.6.1-1
+- add pulseaudio socket to flatpak manifest
 * Mon Nov 16 2026 Seraphim Pardee <me@srp.life> - 1.6.0-1
 - add save char checkbox to gui char select, add scrolling to gui
 * Wed Nov 04 2026 Seraphim Pardee <me@srp.life> - 1.5.1-1

@@ -34,6 +34,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.6.1" date="2026-11-22">
+      <description>
+        <p>add pulseaudio socket to flatpak manifest</p>
+      </description>
+    </release>
     <release version="1.6.0" date="2026-11-16">
       <description>
         <p>add save char checkbox to gui char select, add scrolling to gui</p>
